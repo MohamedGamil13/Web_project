@@ -47,3 +47,7 @@ tmp/
 # Optional local runtime files
 *.pid
 *.seed
+
+# Local file storage (multer-written uploads — avatars, etc.)
+storage/
+backend/storage/

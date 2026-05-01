@@ -1,7 +1,7 @@
-import axios from 'axios';
-import { env } from './env';
+import axios from "axios";
+import { env } from "./env";
 
-export const TOKEN_STORAGE_KEY = 'hb.token';
+export const TOKEN_STORAGE_KEY = "hb.token";
 
 export function getStoredToken() {
   try {
@@ -22,7 +22,7 @@ export function setStoredToken(token) {
 
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { "Content-Type": "application/json" },
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -40,13 +40,28 @@ apiClient.interceptors.response.use(
       setStoredToken(null);
     }
     const apiError = error.response?.data?.error ?? {
-      code: 'NETWORK_ERROR',
-      message: error.message ?? 'Network error',
+      code: "NETWORK_ERROR",
+      message: error.message ?? "Network error",
     };
     return Promise.reject(apiError);
-  }
+  },
 );
 
 export function unwrap(response) {
   return response.data?.data;
+}
+
+export function toAuthenticatedAssetUrl(relativeUrl) {
+  if (!relativeUrl) return null;
+  if (!relativeUrl.startsWith("/")) return relativeUrl;
+  try {
+    const token = getStoredToken();
+    const api = new URL(env.apiBaseUrl);
+    const base = `${api.protocol}//${api.host}`;
+    const u = new URL(relativeUrl, base);
+    if (token) u.searchParams.set("token", token);
+    return u.toString();
+  } catch {
+    return relativeUrl;
+  }
 }

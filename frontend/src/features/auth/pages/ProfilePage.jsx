@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { Formik, Form } from 'formik';
+import { useRef, useState } from "react";
+import { Formik, Form } from "formik";
 import {
   Alert,
   Box,
@@ -11,18 +11,27 @@ import {
   Divider,
   Stack,
   Typography,
-} from '@mui/material';
-import * as yup from 'yup';
-import { FTextField } from '@/lib/formik-mui';
-import { UserAvatar } from '@/components/shared/UserAvatar';
-import { resizeImageToDataUrl } from '@/lib/imageResize';
-import { useAuth } from '@/hooks/useAuth';
-import { updateProfile } from '../api';
+} from "@mui/material";
+import * as yup from "yup";
+import { Link as RouterLink } from "react-router-dom";
+import { FTextField } from "@/lib/formik-mui";
+import { UserAvatar } from "@/components/shared/UserAvatar";
+import { useAuth } from "@/hooks/useAuth";
+import { removeAvatar, updateProfile, uploadAvatar } from "../api";
 
 // Form-only schema (avatar is handled separately via the upload widget).
 const profileFormSchema = yup.object({
-  name: yup.string().trim().min(2, 'Name is too short').max(80).required('Name is required'),
-  email: yup.string().trim().email('Enter a valid email').required('Email is required'),
+  name: yup
+    .string()
+    .trim()
+    .min(2, "Name is too short")
+    .max(80)
+    .required("Name is required"),
+  email: yup
+    .string()
+    .trim()
+    .email("Enter a valid email")
+    .required("Email is required"),
   phone: yup.string().trim().max(40).nullable(),
 });
 
@@ -62,7 +71,11 @@ export default function ProfilePage() {
             subheader={user.email}
             action={
               !isEditing && (
-                <Button variant="outlined" size="small" onClick={() => setIsEditing(true)}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setIsEditing(true)}
+                >
                   Edit
                 </Button>
               )
@@ -73,12 +86,15 @@ export default function ProfilePage() {
             {isEditing ? (
               <Formik
                 initialValues={{
-                  name: user.name ?? '',
-                  email: user.email ?? '',
-                  phone: user.phone ?? '',
+                  name: user.name ?? "",
+                  email: user.email ?? "",
+                  phone: user.phone ?? "",
                 }}
                 validationSchema={profileFormSchema}
-                onSubmit={async (values, { setSubmitting, setFieldError, resetForm }) => {
+                onSubmit={async (
+                  values,
+                  { setSubmitting, setFieldError, resetForm },
+                ) => {
                   setServerError(null);
                   setSavedAt(null);
                   try {
@@ -86,22 +102,27 @@ export default function ProfilePage() {
                     setUser(updated);
                     resetForm({
                       values: {
-                        name: updated.name ?? '',
-                        email: updated.email ?? '',
-                        phone: updated.phone ?? '',
+                        name: updated.name ?? "",
+                        email: updated.email ?? "",
+                        phone: updated.phone ?? "",
                       },
                     });
                     setIsEditing(false);
                     setSavedAt(new Date());
                   } catch (err) {
-                    if (err?.code === 'CONFLICT') {
-                      setFieldError('email', err.message);
-                    } else if (err?.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
+                    if (err?.code === "CONFLICT") {
+                      setFieldError("email", err.message);
+                    } else if (
+                      err?.code === "VALIDATION_ERROR" &&
+                      Array.isArray(err.details)
+                    ) {
                       for (const d of err.details) {
                         if (d.field) setFieldError(d.field, d.message);
                       }
                     } else {
-                      setServerError(err?.message ?? 'Could not update profile');
+                      setServerError(
+                        err?.message ?? "Could not update profile",
+                      );
                     }
                   } finally {
                     setSubmitting(false);
@@ -114,14 +135,16 @@ export default function ProfilePage() {
                       <FTextField name="name" label="Name" />
                       <FTextField name="email" label="Email" type="email" />
                       <FTextField name="phone" label="Phone" type="tel" />
-                      {serverError && <Alert severity="error">{serverError}</Alert>}
+                      {serverError && (
+                        <Alert severity="error">{serverError}</Alert>
+                      )}
                       <Stack direction="row" spacing={1}>
                         <Button
                           type="submit"
                           variant="contained"
                           disabled={isSubmitting || !dirty}
                         >
-                          {isSubmitting ? 'Saving…' : 'Save changes'}
+                          {isSubmitting ? "Saving…" : "Save changes"}
                         </Button>
                         <Button
                           type="button"
@@ -142,7 +165,7 @@ export default function ProfilePage() {
               </Formik>
             ) : (
               <Stack spacing={1.5}>
-                <DetailRow label="Phone" value={user.phone || '—'} />
+                <DetailRow label="Phone" value={user.phone || "—"} />
                 <DetailRow label="Role" value={user.role} />
                 {savedAt && (
                   <Typography variant="caption" color="text.secondary">
@@ -157,8 +180,17 @@ export default function ProfilePage() {
         <Card variant="outlined">
           <CardHeader
             title="Password"
-            subheader="Change-password ships in Phase 8."
-            titleTypographyProps={{ variant: 'subtitle1' }}
+            subheader="Update your password on the dedicated security page."
+            action={
+              <Button
+                component={RouterLink}
+                to="/profile/password"
+                variant="outlined"
+                size="small"
+              >
+                Change password
+              </Button>
+            }
           />
         </Card>
       </Stack>
@@ -176,11 +208,10 @@ function AvatarCard({ user, setUser }) {
     setError(null);
     setUploading(true);
     try {
-      const dataUrl = await resizeImageToDataUrl(file, 256, 0.85);
-      const updated = await updateProfile({ avatarUrl: dataUrl });
+      const updated = await uploadAvatar(file);
       setUser(updated);
     } catch (err) {
-      setError(err?.message ?? 'Could not upload avatar');
+      setError(err?.message ?? "Could not upload avatar");
     } finally {
       setUploading(false);
     }
@@ -190,10 +221,10 @@ function AvatarCard({ user, setUser }) {
     setError(null);
     setUploading(true);
     try {
-      const updated = await updateProfile({ avatarUrl: '' });
+      const updated = await removeAvatar();
       setUser(updated);
     } catch (err) {
-      setError(err?.message ?? 'Could not remove avatar');
+      setError(err?.message ?? "Could not remove avatar");
     } finally {
       setUploading(false);
     }
@@ -203,9 +234,9 @@ function AvatarCard({ user, setUser }) {
     <Card variant="outlined">
       <CardContent>
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
+          direction={{ xs: "column", sm: "row" }}
           spacing={2.5}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
         >
           <UserAvatar user={user} size={80} />
           <Box sx={{ flex: 1 }}>
@@ -214,17 +245,21 @@ function AvatarCard({ user, setUser }) {
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
               {user.avatarUrl
-                ? 'Replace or remove your current photo.'
-                : 'Showing your initials. Upload an image to personalize.'}
+                ? "Replace or remove your current photo."
+                : "Showing your initials. Upload an image to personalize."}
             </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
               <Button
                 variant="contained"
                 size="small"
                 disabled={uploading}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {uploading ? 'Working…' : user.avatarUrl ? 'Change photo' : 'Upload photo'}
+                {uploading
+                  ? "Working…"
+                  : user.avatarUrl
+                    ? "Change photo"
+                    : "Upload photo"}
               </Button>
               {user.avatarUrl && (
                 <Button
@@ -244,7 +279,7 @@ function AvatarCard({ user, setUser }) {
                 hidden
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  e.target.value = ''; // allow re-uploading the same file
+                  e.target.value = ""; // allow re-uploading the same file
                   handleFile(file);
                 }}
               />
@@ -263,7 +298,14 @@ function AvatarCard({ user, setUser }) {
 
 function DetailRow({ label, value }) {
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 2, alignItems: 'baseline' }}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "120px 1fr",
+        gap: 2,
+        alignItems: "baseline",
+      }}
+    >
       <Typography variant="body2" color="text.secondary">
         {label}
       </Typography>

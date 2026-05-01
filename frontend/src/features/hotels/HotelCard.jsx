@@ -1,4 +1,4 @@
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from "react-router-dom";
 import {
   Box,
   Button,
@@ -10,16 +10,19 @@ import {
   Rating,
   Stack,
   Typography,
-} from '@mui/material';
+} from "@mui/material";
 
 export function HotelCard({ hotel }) {
   return (
-    <Card variant="outlined" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Card
+      variant="outlined"
+      sx={{ display: "flex", flexDirection: "column", height: "100%" }}
+    >
       <CardMedia
-        component={hotel.thumbnail ? 'img' : 'div'}
+        component={hotel.thumbnail ? "img" : "div"}
         image={hotel.thumbnail || undefined}
         alt={hotel.name}
-        sx={{ aspectRatio: '16 / 9', bgcolor: 'action.hover' }}
+        sx={{ aspectRatio: "16 / 9", bgcolor: "action.hover" }}
         loading="lazy"
       />
       <CardContent sx={{ flex: 1 }}>
@@ -30,39 +33,55 @@ export function HotelCard({ hotel }) {
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {hotel.city}
-              {hotel.country ? `, ${hotel.country}` : ''}
+              {hotel.country ? `, ${hotel.country}` : ""}
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Rating value={hotel.starRating ?? 0} readOnly size="small" />
-            <Typography variant="caption" color="text.secondary">
-              {hotel.reviewCount > 0
-                ? `${(hotel.reviewAvg ?? 0).toFixed?.(1) ?? hotel.reviewAvg} · ${hotel.reviewCount} reviews`
-                : 'No reviews yet'}
-            </Typography>
-          </Stack>
+          {hotel.reviewCount > 0 && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Rating
+                value={hotel.reviewAvg ?? 0}
+                precision={0.5}
+                readOnly
+                size="small"
+              />
+              <Typography variant="caption" color="text.secondary">
+                {(hotel.reviewAvg ?? 0).toFixed?.(1) ?? hotel.reviewAvg} ·{" "}
+                {hotel.reviewCount} reviews
+              </Typography>
+            </Stack>
+          )}
           {hotel.amenities?.length > 0 && (
-            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap" }}>
               {hotel.amenities.slice(0, 4).map((a) => (
-                <Chip key={a} label={a} size="small" sx={{ textTransform: 'capitalize' }} />
+                <Chip
+                  key={a}
+                  label={a}
+                  size="small"
+                  sx={{ textTransform: "capitalize" }}
+                />
               ))}
               {hotel.amenities.length > 4 && (
-                <Chip label={`+${hotel.amenities.length - 4}`} size="small" variant="outlined" />
+                <Chip
+                  label={`+${hotel.amenities.length - 4}`}
+                  size="small"
+                  variant="outlined"
+                />
               )}
             </Stack>
           )}
         </Stack>
       </CardContent>
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+      <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 2 }}>
         <Typography variant="body2">
           <Box component="span" color="text.secondary">
-            from{' '}
+            from{" "}
           </Box>
           <Box component="span" fontWeight={600}>
             ${hotel.priceFrom}
           </Box>
           <Box component="span" color="text.secondary">
-            {' '}/ night
+            {" "}
+            / night
           </Box>
         </Typography>
         <Button

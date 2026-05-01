@@ -1,7 +1,7 @@
-import { useField, useFormikContext } from 'formik';
-import { TextField } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs from 'dayjs';
+import { useField, useFormikContext } from "formik";
+import { TextField } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 
 // Drop-in MUI TextField wired to Formik. Use anywhere you'd otherwise call
 // useField + spread the field props onto a <TextField>.
@@ -12,7 +12,7 @@ export function FTextField({ name, helperText, ...props }) {
     <TextField
       {...field}
       {...props}
-      value={field.value ?? ''}
+      value={field.value ?? ""}
       error={showError}
       helperText={showError ? meta.error : helperText}
       fullWidth
@@ -26,7 +26,14 @@ export function FTextField({ name, helperText, ...props }) {
 // state so existing Yup schemas keep working unchanged. The optional `onChange`
 // callback fires AFTER the field value is set — handy for cross-field updates
 // (e.g. bumping a checkout date when check-in moves past it).
-export function FDatePicker({ name, label, minDate, maxDate, helperText, onChange }) {
+export function FDatePicker({
+  name,
+  label,
+  minDate,
+  maxDate,
+  helperText,
+  onChange,
+}) {
   const [field, meta] = useField(name);
   const { setFieldValue, setFieldTouched } = useFormikContext();
   const showError = meta.touched && Boolean(meta.error);
@@ -35,7 +42,7 @@ export function FDatePicker({ name, label, minDate, maxDate, helperText, onChang
       label={label}
       value={field.value ? dayjs(field.value) : null}
       onChange={(d) => {
-        setFieldValue(name, d ? d.format('YYYY-MM-DD') : '', true);
+        setFieldValue(name, d ? d.format("YYYY-MM-DD") : "", true);
         if (onChange) onChange(d);
       }}
       minDate={minDate}
@@ -43,7 +50,7 @@ export function FDatePicker({ name, label, minDate, maxDate, helperText, onChang
       slotProps={{
         textField: {
           name,
-          size: 'small',
+          size: "small",
           fullWidth: true,
           onBlur: () => setFieldTouched(name, true),
           error: showError,

@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Formik, Form } from 'formik';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { Formik, Form } from "formik";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -9,11 +9,11 @@ import {
   Paper,
   Stack,
   Typography,
-} from '@mui/material';
-import { FTextField } from '@/lib/formik-mui';
-import { useAuth } from '@/hooks/useAuth';
-import { registerSchema } from '../schemas';
-import { register as registerApi } from '../api';
+} from "@mui/material";
+import { FTextField } from "@/lib/formik-mui";
+import { useAuth } from "@/hooks/useAuth";
+import { registerSchema } from "../schemas";
+import { register as registerApi } from "../api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -33,7 +33,13 @@ export default function RegisterPage() {
         </Stack>
 
         <Formik
-          initialValues={{ name: '', email: '', password: '', confirmPassword: '', phone: '' }}
+          initialValues={{
+            name: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            phone: "",
+          }}
           validationSchema={registerSchema}
           onSubmit={async (values, { setSubmitting, setFieldError }) => {
             setServerError(null);
@@ -42,16 +48,19 @@ export default function RegisterPage() {
             try {
               const { user, token } = await registerApi(payload);
               login(user, token);
-              navigate('/', { replace: true });
+              navigate("/", { replace: true });
             } catch (err) {
-              if (err?.code === 'CONFLICT') {
-                setFieldError('email', err.message);
-              } else if (err?.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
+              if (err?.code === "CONFLICT") {
+                setFieldError("email", err.message);
+              } else if (
+                err?.code === "VALIDATION_ERROR" &&
+                Array.isArray(err.details)
+              ) {
                 for (const d of err.details) {
                   if (d.field) setFieldError(d.field, d.message);
                 }
               } else {
-                setServerError(err?.message ?? 'Could not create account');
+                setServerError(err?.message ?? "Could not create account");
               }
             } finally {
               setSubmitting(false);
@@ -62,8 +71,18 @@ export default function RegisterPage() {
             <Form noValidate>
               <Stack spacing={2.5}>
                 <FTextField name="name" label="Name" autoComplete="name" />
-                <FTextField name="email" label="Email" type="email" autoComplete="email" />
-                <FTextField name="phone" label="Phone (optional)" type="tel" autoComplete="tel" />
+                <FTextField
+                  name="email"
+                  label="Email"
+                  type="email"
+                  autoComplete="email"
+                />
+                <FTextField
+                  name="phone"
+                  label="Phone (optional)"
+                  type="tel"
+                  autoComplete="tel"
+                />
                 <FTextField
                   name="password"
                   label="Password"
@@ -77,11 +96,19 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                 />
                 {serverError && <Alert severity="error">{serverError}</Alert>}
-                <Button type="submit" variant="contained" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating account…' : 'Create account'}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating account…" : "Create account"}
                 </Button>
-                <Typography variant="body2" textAlign="center" color="text.secondary">
-                  Already have one?{' '}
+                <Typography
+                  variant="body2"
+                  textAlign="center"
+                  color="text.secondary"
+                >
+                  Already have one?{" "}
                   <MuiLink component={Link} to="/login" underline="hover">
                     Sign in
                   </MuiLink>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -12,24 +12,29 @@ import {
   Stack,
   TextField,
   Typography,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { HotelCard } from '../HotelCard';
-import { HotelFilters } from '../HotelFilters';
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { HotelCard } from "../HotelCard";
+import { HotelFilters } from "../HotelFilters";
 import {
   FILTER_DEFAULTS,
   filtersToApiQuery,
   filtersToParams,
   isEmpty,
   readFilters,
-} from '../filters';
-import { listHotels } from '../api';
+} from "../filters";
+import { listHotels } from "../api";
 
 export default function HotelsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = readFilters(searchParams);
-  const [state, setState] = useState({ status: 'idle', items: [], meta: null, error: null });
+  const [state, setState] = useState({
+    status: "idle",
+    items: [],
+    meta: null,
+    error: null,
+  });
 
   const searchKey = searchParams.toString();
   const debouncedSearchKey = useDebouncedValue(searchKey, 400);
@@ -46,15 +51,22 @@ export default function HotelsListPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setState((s) => ({ ...s, status: 'loading', error: null }));
-    listHotels(filtersToApiQuery(readFilters(new URLSearchParams(debouncedSearchKey))))
+    setState((s) => ({ ...s, status: "loading", error: null }));
+    listHotels(
+      filtersToApiQuery(readFilters(new URLSearchParams(debouncedSearchKey))),
+    )
       .then((res) => {
         if (cancelled) return;
-        setState({ status: 'success', items: res.items, meta: res.meta, error: null });
+        setState({
+          status: "success",
+          items: res.items,
+          meta: res.meta,
+          error: null,
+        });
       })
       .catch((err) => {
         if (cancelled) return;
-        setState({ status: 'error', items: [], meta: null, error: err });
+        setState({ status: "error", items: [], meta: null, error: err });
       });
     return () => {
       cancelled = true;
@@ -65,7 +77,7 @@ export default function HotelsListPage() {
   const page = filters.page;
   const pageSize = filters.pageSize || FILTER_DEFAULTS.pageSize;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const showSkeletons = state.status === 'loading' && state.items.length === 0;
+  const showSkeletons = state.status === "loading" && state.items.length === 0;
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 3, md: 4 } }}>
@@ -84,12 +96,14 @@ export default function HotelsListPage() {
               placeholder="City or hotel name…"
               value={filters.q}
               onChange={(e) => updateFilters({ q: e.target.value, page: 1 })}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
             {!isEmpty(filters) && (
@@ -102,44 +116,55 @@ export default function HotelsListPage() {
 
         <Box
           sx={{
-            display: 'grid',
+            display: "grid",
             gap: 3,
-            gridTemplateColumns: { xs: '1fr', lg: '260px 1fr' },
+            gridTemplateColumns: { xs: "1fr", lg: "260px 1fr" },
           }}
         >
           <Box component="aside">
-            <HotelFilters filters={filters} onChange={updateFilters} onReset={resetFilters} />
+            <HotelFilters
+              filters={filters}
+              onChange={updateFilters}
+              onReset={resetFilters}
+            />
           </Box>
 
           <Box component="section">
             <Stack spacing={2}>
               <Box sx={{ minHeight: 22 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {state.status === 'error'
-                    ? 'Could not load hotels'
+                  {state.status === "error"
+                    ? "Could not load hotels"
                     : isPending
-                      ? 'Updating…'
+                      ? "Updating…"
                       : showSkeletons
-                        ? 'Searching…'
-                        : `${total} hotel${total === 1 ? '' : 's'}`}
+                        ? "Searching…"
+                        : `${total} hotel${total === 1 ? "" : "s"}`}
                 </Typography>
               </Box>
 
               {showSkeletons && (
                 <Box
                   sx={{
-                    display: 'grid',
+                    display: "grid",
                     gap: 2,
                     gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: 'repeat(2, 1fr)',
-                      xl: 'repeat(3, 1fr)',
+                      xs: "1fr",
+                      sm: "repeat(2, 1fr)",
+                      xl: "repeat(3, 1fr)",
                     },
                   }}
                 >
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <Paper key={i} variant="outlined" sx={{ overflow: 'hidden' }}>
-                      <Skeleton variant="rectangular" sx={{ aspectRatio: '16 / 9' }} />
+                    <Paper
+                      key={i}
+                      variant="outlined"
+                      sx={{ overflow: "hidden" }}
+                    >
+                      <Skeleton
+                        variant="rectangular"
+                        sx={{ aspectRatio: "16 / 9" }}
+                      />
                       <Box p={2}>
                         <Skeleton width="75%" />
                         <Skeleton width="50%" />
@@ -150,20 +175,24 @@ export default function HotelsListPage() {
                 </Box>
               )}
 
-              {state.status === 'error' && (
+              {state.status === "error" && (
                 <Alert
                   severity="error"
                   action={
-                    <Button color="inherit" size="small" onClick={() => updateFilters({})}>
+                    <Button
+                      color="inherit"
+                      size="small"
+                      onClick={() => updateFilters({})}
+                    >
                       Try again
                     </Button>
                   }
                 >
-                  {state.error?.message ?? 'Could not reach the API.'}
+                  {state.error?.message ?? "Could not reach the API."}
                 </Alert>
               )}
 
-              {state.status === 'success' && state.items.length === 0 && (
+              {state.status === "success" && state.items.length === 0 && (
                 <Alert
                   severity="info"
                   action={
@@ -172,8 +201,8 @@ export default function HotelsListPage() {
                     </Button>
                   }
                 >
-                  No hotels matched your filters. Try widening the price range or removing some
-                  amenities.
+                  No hotels matched your filters. Try widening the price range
+                  or removing some amenities.
                 </Alert>
               )}
 
@@ -181,15 +210,16 @@ export default function HotelsListPage() {
                 <>
                   <Box
                     sx={{
-                      display: 'grid',
+                      display: "grid",
                       gap: 2,
                       gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: 'repeat(2, 1fr)',
-                        xl: 'repeat(3, 1fr)',
+                        xs: "1fr",
+                        sm: "repeat(2, 1fr)",
+                        xl: "repeat(3, 1fr)",
                       },
-                      transition: 'opacity 200ms',
-                      opacity: isPending || state.status === 'loading' ? 0.6 : 1,
+                      transition: "opacity 200ms",
+                      opacity:
+                        isPending || state.status === "loading" ? 0.6 : 1,
                     }}
                   >
                     {state.items.map((h) => (
@@ -197,7 +227,9 @@ export default function HotelsListPage() {
                     ))}
                   </Box>
                   {totalPages > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1 }}>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", pt: 1 }}
+                    >
                       <Pagination
                         count={totalPages}
                         page={page}

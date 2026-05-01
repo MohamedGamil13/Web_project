@@ -1,22 +1,22 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const reservationSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
     hotelId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Hotel',
+      ref: "Hotel",
       required: true,
       index: true,
     },
     roomId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Room',
+      ref: "Room",
       required: true,
       index: true,
     },
@@ -25,7 +25,12 @@ const reservationSchema = new mongoose.Schema(
     guests: { type: Number, required: true, min: 1, max: 16 },
     nights: { type: Number, required: true, min: 1 },
     totalPrice: { type: Number, required: true, min: 0 },
-    status: { type: String, enum: ['active', 'cancelled'], default: 'active', index: true },
+    status: {
+      type: String,
+      enum: ["active", "cancelled"],
+      default: "active",
+      index: true,
+    },
     cancelledAt: { type: Date, default: undefined },
   },
   {
@@ -34,8 +39,8 @@ const reservationSchema = new mongoose.Schema(
       versionKey: false,
       transform: (_doc, ret) => {
         ret.id = ret._id?.toString();
-        ['userId', 'hotelId', 'roomId'].forEach((k) => {
-          if (ret[k] && typeof ret[k] === 'object' && ret[k].toString) {
+        ["userId", "hotelId", "roomId"].forEach((k) => {
+          if (ret[k] && typeof ret[k] === "object" && ret[k].toString) {
             ret[k] = ret[k].toString();
           }
         });
@@ -43,10 +48,10 @@ const reservationSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 reservationSchema.index({ roomId: 1, status: 1, checkIn: 1, checkOut: 1 });
 reservationSchema.index({ userId: 1, checkIn: -1 });
 
-export const Reservation = mongoose.model('Reservation', reservationSchema);
+export const Reservation = mongoose.model("Reservation", reservationSchema);

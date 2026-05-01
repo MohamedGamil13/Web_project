@@ -1,6 +1,12 @@
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
-import { getStoredToken, setStoredToken } from '@/lib/apiClient';
-import { getMe, logoutServer } from './api';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { getStoredToken, setStoredToken } from "@/lib/apiClient";
+import { getMe, logoutServer } from "./api";
 
 export const AuthContext = createContext(null);
 
@@ -61,7 +67,7 @@ export function AuthProvider({ children }) {
       logout,
       setUser,
     }),
-    [user, token, bootstrapping, login, logout]
+    [user, token, bootstrapping, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

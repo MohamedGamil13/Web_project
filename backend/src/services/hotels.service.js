@@ -1,14 +1,14 @@
-import { Hotel } from '../models/Hotel.js';
-import { Room } from '../models/Room.js';
-import { ApiError } from '../utils/ApiError.js';
+import { Hotel } from "../models/Hotel.js";
+import { Room } from "../models/Room.js";
+import { ApiError } from "../utils/ApiError.js";
 
 const SORT_MAP = {
   price: { priceFrom: 1, _id: 1 },
-  '-price': { priceFrom: -1, _id: 1 },
-  '-rating': { reviewAvg: -1, _id: 1 },
+  "-price": { priceFrom: -1, _id: 1 },
+  "-rating": { reviewAvg: -1, _id: 1 },
   name: { name: 1, _id: 1 },
-  '-name': { name: -1, _id: 1 },
-  '-createdAt': { createdAt: -1, _id: 1 },
+  "-name": { name: -1, _id: 1 },
+  "-createdAt": { createdAt: -1, _id: 1 },
 };
 
 function summarize(hotelDoc) {
@@ -40,18 +40,18 @@ export async function listHotels(query) {
     pageSize = 10,
   } = query;
 
-  const escapeRx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapeRx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const filter = {};
   if (q) {
-    const rx = new RegExp(escapeRx(q), 'i');
+    const rx = new RegExp(escapeRx(q), "i");
     filter.$or = [{ name: rx }, { city: rx }, { country: rx }];
   }
-  if (city) filter.city = new RegExp(escapeRx(city), 'i');
-  if (typeof minStars === 'number') filter.starRating = { $gte: minStars };
-  if (typeof minPrice === 'number' || typeof maxPrice === 'number') {
+  if (city) filter.city = new RegExp(escapeRx(city), "i");
+  if (typeof minStars === "number") filter.starRating = { $gte: minStars };
+  if (typeof minPrice === "number" || typeof maxPrice === "number") {
     filter.priceFrom = {};
-    if (typeof minPrice === 'number') filter.priceFrom.$gte = minPrice;
-    if (typeof maxPrice === 'number') filter.priceFrom.$lte = maxPrice;
+    if (typeof minPrice === "number") filter.priceFrom.$gte = minPrice;
+    if (typeof maxPrice === "number") filter.priceFrom.$lte = maxPrice;
   }
   if (Array.isArray(amenities) && amenities.length > 0) {
     filter.amenities = { $all: amenities };
@@ -73,14 +73,16 @@ export async function listHotels(query) {
 
 export async function getHotelDetail(id) {
   const hotel = await Hotel.findById(id);
-  if (!hotel) throw ApiError.notFound('Hotel not found');
-  const rooms = await Room.find({ hotel: hotel._id }).sort({ pricePerNight: 1 }).lean();
+  if (!hotel) throw ApiError.notFound("Hotel not found");
+  const rooms = await Room.find({ hotel: hotel._id })
+    .sort({ pricePerNight: 1 })
+    .lean();
 
   const summary = summarize(hotel);
   return {
     ...summary,
-    description: hotel.description ?? '',
-    address: hotel.address ?? '',
+    description: hotel.description ?? "",
+    address: hotel.address ?? "",
     images: hotel.images ?? [],
     rooms: rooms.map((r) => ({
       id: r._id.toString(),
@@ -104,23 +106,25 @@ export async function updateHotel(id, patch) {
   const hotel = await Hotel.findByIdAndUpdate(id, patch, {
     new: true,
     runValidators: true,
-    context: 'query',
+    context: "query",
   });
-  if (!hotel) throw ApiError.notFound('Hotel not found');
+  if (!hotel) throw ApiError.notFound("Hotel not found");
   return hotel.toJSON();
 }
 
 export async function deleteHotel(id) {
   const hotel = await Hotel.findByIdAndDelete(id);
-  if (!hotel) throw ApiError.notFound('Hotel not found');
+  if (!hotel) throw ApiError.notFound("Hotel not found");
   await Room.deleteMany({ hotel: hotel._id });
   return { id };
 }
 
 export async function listRoomsForHotel(hotelId) {
-  const hotel = await Hotel.findById(hotelId).select('_id').lean();
-  if (!hotel) throw ApiError.notFound('Hotel not found');
-  const rooms = await Room.find({ hotel: hotelId }).sort({ pricePerNight: 1 }).lean();
+  const hotel = await Hotel.findById(hotelId).select("_id").lean();
+  if (!hotel) throw ApiError.notFound("Hotel not found");
+  const rooms = await Room.find({ hotel: hotelId })
+    .sort({ pricePerNight: 1 })
+    .lean();
   return rooms.map((r) => ({
     id: r._id.toString(),
     hotel: r.hotel.toString(),

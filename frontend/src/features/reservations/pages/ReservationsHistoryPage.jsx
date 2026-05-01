@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -10,29 +10,36 @@ import {
   Skeleton,
   Stack,
   Typography,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { ReservationCard } from '../ReservationCard';
-import { listMyReservations } from '../api';
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { ReservationCard } from "../ReservationCard";
+import { listMyReservations } from "../api";
 
 function isPastStay(reservation) {
-  return reservation.status === 'active' && new Date(reservation.checkOut) <= new Date();
+  return (
+    reservation.status === "active" &&
+    new Date(reservation.checkOut) <= new Date()
+  );
 }
 
 function isCancelled(reservation) {
-  return reservation.status === 'cancelled';
+  return reservation.status === "cancelled";
 }
 
 export default function ReservationsHistoryPage() {
-  const [state, setState] = useState({ status: 'loading', items: [], error: null });
+  const [state, setState] = useState({
+    status: "loading",
+    items: [],
+    error: null,
+  });
 
   async function refresh() {
-    setState((s) => ({ ...s, status: 'loading', error: null }));
+    setState((s) => ({ ...s, status: "loading", error: null }));
     try {
       const items = await listMyReservations();
-      setState({ status: 'success', items, error: null });
+      setState({ status: "success", items, error: null });
     } catch (err) {
-      setState({ status: 'error', items: [], error: err });
+      setState({ status: "error", items: [], error: err });
     }
   }
 
@@ -66,9 +73,9 @@ export default function ReservationsHistoryPage() {
           </Typography>
         </Box>
 
-        {state.status === 'loading' && <ReservationGridSkeleton />}
+        {state.status === "loading" && <ReservationGridSkeleton />}
 
-        {state.status === 'error' && (
+        {state.status === "error" && (
           <Alert
             severity="error"
             action={
@@ -77,11 +84,11 @@ export default function ReservationsHistoryPage() {
               </Button>
             }
           >
-            {state.error?.message ?? 'Could not load reservations.'}
+            {state.error?.message ?? "Could not load reservations."}
           </Alert>
         )}
 
-        {state.status === 'success' && !hasHistory && (
+        {state.status === "success" && !hasHistory && (
           <Card variant="outlined">
             <CardContent>
               <Typography variant="subtitle1" fontWeight={600}>
@@ -90,14 +97,18 @@ export default function ReservationsHistoryPage() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Past stays and cancelled reservations will show up here.
               </Typography>
-              <Button component={RouterLink} to="/reservations" variant="contained">
+              <Button
+                component={RouterLink}
+                to="/reservations"
+                variant="contained"
+              >
                 Back to current
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {state.status === 'success' && past.length > 0 && (
+        {state.status === "success" && past.length > 0 && (
           <Section title="Past stays">
             {past.map((r) => (
               <ReservationCard key={r.id} reservation={r} />
@@ -105,7 +116,7 @@ export default function ReservationsHistoryPage() {
           </Section>
         )}
 
-        {state.status === 'success' && cancelled.length > 0 && (
+        {state.status === "success" && cancelled.length > 0 && (
           <Section title="Cancelled">
             {cancelled.map((r) => (
               <ReservationCard key={r.id} reservation={r} />
@@ -125,9 +136,13 @@ function Section({ title, children }) {
       </Typography>
       <Box
         sx={{
-          display: 'grid',
+          display: "grid",
           gap: 2,
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            lg: "repeat(3, 1fr)",
+          },
         }}
       >
         {children}
@@ -140,9 +155,13 @@ function ReservationGridSkeleton() {
   return (
     <Box
       sx={{
-        display: 'grid',
+        display: "grid",
         gap: 2,
-        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+        gridTemplateColumns: {
+          xs: "1fr",
+          sm: "repeat(2, 1fr)",
+          lg: "repeat(3, 1fr)",
+        },
       }}
     >
       {Array.from({ length: 3 }).map((_, i) => (

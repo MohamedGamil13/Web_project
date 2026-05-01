@@ -5,15 +5,15 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-} from '@mui/material';
+} from "@mui/material";
 
 export function ConfirmDialog({
   open,
   onOpenChange,
-  title = 'Are you sure?',
+  title = "Are you sure?",
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
   destructive = false,
   busy = false,
   onConfirm,
@@ -22,7 +22,8 @@ export function ConfirmDialog({
     <Dialog
       open={open}
       onClose={(_event, reason) => {
-        if (busy && (reason === 'backdropClick' || reason === 'escapeKeyDown')) return;
+        if (busy && (reason === "backdropClick" || reason === "escapeKeyDown"))
+          return;
         onOpenChange(false);
       }}
       fullWidth
@@ -35,17 +36,21 @@ export function ConfirmDialog({
         </DialogContent>
       )}
       <DialogActions>
-        <Button variant="text" disabled={busy} onClick={() => onOpenChange(false)}>
+        <Button
+          variant="text"
+          disabled={busy}
+          onClick={() => onOpenChange(false)}
+        >
           {cancelLabel}
         </Button>
         <Button
           variant="contained"
-          color={destructive ? 'error' : 'primary'}
+          color={destructive ? "error" : "primary"}
           disabled={busy}
           onClick={onConfirm}
           autoFocus
         >
-          {busy ? 'Working…' : confirmLabel}
+          {busy ? "Working…" : confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>

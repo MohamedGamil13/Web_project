@@ -1,0 +1,511 @@
+{
+  "info": {
+    "name": "Hotel Booking API",
+    "_postman_id": "hb-v1-academic",
+    "description": "Hotel Booking — Phase 7 academic project. After importing, run `Auth → Login (alice)` first; the test script captures the JWT into the `{{token}}` collection variable so every other request authenticates automatically.\n\nDefaults assume the local dev server (backend `npm run dev` on `http://localhost:5050`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5050/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "hotelId", "value": "" },
+    { "key": "roomId", "value": "" },
+    { "key": "reservationId", "value": "" },
+    { "key": "reviewId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "reauthToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New User\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password1\",\n  \"phone\": \"+1 555 0100\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json().data;",
+                  "  if (data?.token) pm.collectionVariables.set('token', data.token);",
+                  "  if (data?.user?.id) pm.collectionVariables.set('userId', data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (alice)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password1\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.collectionVariables.set('token', data.token);",
+                  "  pm.collectionVariables.set('userId', data.user.id);",
+                  "  console.log('Token captured for', data.user.email);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (admin)",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password1\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('token', pm.response.json().data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Walker\",\n  \"phone\": \"+1 555 0101\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Password — Verify current",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me/password/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "password", "verify"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "  if (data?.reauthToken) {",
+                  "    pm.collectionVariables.set('reauthToken', data.reauthToken);",
+                  "    console.log('Re-auth token captured (10 min TTL)');",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Password — Change",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-reauth-token", "value": "{{reauthToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"NewPassword1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "password"]
+            },
+            "description": "Run *Password — Verify current* first; the test script captures `reauthToken` into the collection variable used here."
+          }
+        },
+        {
+          "name": "Avatar — Upload (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "",
+                  "description": "Image file (jpg/png/webp/gif), ≤ 5 MB"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "avatar"]
+            },
+            "description": "Pick a local file with the `avatar` form field. Multer writes it to `backend/storage/avatars/`."
+          }
+        },
+        {
+          "name": "Avatar — Remove",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/users/me/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "avatar"]
+            }
+          }
+        },
+        {
+          "name": "Avatar — Fetch (own)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "avatar"]
+            },
+            "description": "Auth required — bearer header OR `?token=<jwt>` query param so plain <img src> tags work."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hotels",
+      "item": [
+        {
+          "name": "List hotels (with filters)",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/hotels?page=1&pageSize=10&sort=-rating",
+              "host": ["{{baseUrl}}"],
+              "path": ["hotels"],
+              "query": [
+                { "key": "q", "value": "lis", "disabled": true, "description": "search by name/city/country (substring, case-insensitive)" },
+                { "key": "city", "value": "Lisbon", "disabled": true },
+                { "key": "minPrice", "value": "50", "disabled": true },
+                { "key": "maxPrice", "value": "300", "disabled": true },
+                { "key": "minStars", "value": "3", "disabled": true },
+                { "key": "amenities", "value": "wifi,pool", "disabled": true, "description": "comma-separated, lowercased" },
+                { "key": "sort", "value": "-rating", "description": "price | -price | -rating | name | -name | -createdAt" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const list = pm.response.json().data;",
+                  "  if (list?.[0]?.id) pm.collectionVariables.set('hotelId', list[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get hotel detail",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": { "raw": "{{baseUrl}}/hotels/{{hotelId}}", "host": ["{{baseUrl}}"], "path": ["hotels", "{{hotelId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const hotel = pm.response.json().data;",
+                  "  if (hotel?.rooms?.[0]?.id) pm.collectionVariables.set('roomId', hotel.rooms[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List rooms for a hotel",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}/rooms",
+              "host": ["{{baseUrl}}"],
+              "path": ["hotels", "{{hotelId}}", "rooms"]
+            }
+          }
+        },
+        {
+          "name": "[admin] Create hotel",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Test Hotel\",\n  \"city\": \"Faro\",\n  \"country\": \"Portugal\",\n  \"starRating\": 4,\n  \"description\": \"Demo hotel created via Postman.\",\n  \"amenities\": [\"wifi\", \"pool\"],\n  \"images\": [\"https://picsum.photos/seed/new-hotel/800/600\"],\n  \"priceFrom\": 120\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/hotels", "host": ["{{baseUrl}}"], "path": ["hotels"] }
+          }
+        },
+        {
+          "name": "[admin] Update hotel",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/hotels/{{hotelId}}", "host": ["{{baseUrl}}"], "path": ["hotels", "{{hotelId}}"] }
+          }
+        },
+        {
+          "name": "[admin] Delete hotel",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/hotels/{{hotelId}}", "host": ["{{baseUrl}}"], "path": ["hotels", "{{hotelId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Create reservation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"checkIn\": \"2026-12-01\",\n  \"checkOut\": \"2026-12-05\",\n  \"guests\": 2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/reservations", "host": ["{{baseUrl}}"], "path": ["reservations"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('reservationId', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my reservations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/reservations/me", "host": ["{{baseUrl}}"], "path": ["reservations", "me"] }
+          }
+        },
+        {
+          "name": "Get a reservation by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", "{{reservationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel a reservation",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", "{{reservationId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "List reviews for a hotel",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}/reviews?page=1&pageSize=10&sort=-createdAt",
+              "host": ["{{baseUrl}}"],
+              "path": ["hotels", "{{hotelId}}", "reviews"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "10" },
+                { "key": "sort", "value": "-createdAt", "description": "-createdAt | createdAt | -rating | rating" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get my review for a hotel",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}/reviews/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["hotels", "{{hotelId}}", "reviews", "me"]
+            }
+          }
+        },
+        {
+          "name": "Create a review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great stay near the river.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["hotels", "{{hotelId}}", "reviews"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('reviewId', pm.response.json().data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update my review",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated comment.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] }
+          }
+        },
+        {
+          "name": "Delete my review",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

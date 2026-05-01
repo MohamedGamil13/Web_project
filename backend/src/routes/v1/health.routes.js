@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { getHealth } from '../../controllers/health.controller.js';
+import { Router } from "express";
+import { getHealth } from "../../controllers/health.controller.js";
 
 const router = Router();
 
@@ -13,6 +13,6 @@ const router = Router();
  *       200:
  *         description: Service is up
  */
-router.get('/', getHealth);
+router.get("/", getHealth);
 
 export default router;

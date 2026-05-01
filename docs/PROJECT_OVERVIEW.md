@@ -54,7 +54,7 @@ A hotel booking web application built as an academic group project. End users ca
 | 3 | Auth & Profile | FE1 + BE1 | Register/login/logout works end-to-end; JWT-protected `/me`; profile view + edit (password change deferred to Phase 7) |
 | 4 | Hotel Search & Filtering | FE2 + BE2 | Search page hits real `/hotels` API with filters + pagination |
 | 5 | Reservations | FE2 + BE3 | User can create + view + cancel reservations against real API |
-| 6 | Rubric Alignment Refactor | FE1 + FE2 | Replace RHF/Zod forms with Formik; introduce Bootstrap or MUI usage in key pages/components; update TRD/README accordingly |
+| 6 | Rubric Alignment Refactor | FE1 + FE2 | Migrate frontend forms to **Formik + Yup**; standardize on **Material-UI v9 + Emotion** for all UI primitives; remove Tailwind / shadcn / Radix from the runtime; update TRD/README accordingly |
 | 7 | Reviews & Ratings | FE2 + BE3 | User can post a review for a stayed hotel; average rating shown; reviews endpoints mounted and tested |
 | 8 | Testing, Docs & Polish | All | API tests expanded per endpoint; Swagger + API collection published; README finished; **password-change endpoint shipped**; demo run-through |
 

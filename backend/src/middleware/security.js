@@ -1,7 +1,7 @@
-import helmet from 'helmet';
-import cors from 'cors';
-import morgan from 'morgan';
-import { env, isProd, isTest } from '../config/env.js';
+import helmet from "helmet";
+import cors from "cors";
+import morgan from "morgan";
+import { env, isProd, isTest } from "../config/env.js";
 
 export function applySecurity(app) {
   app.use(
@@ -9,14 +9,17 @@ export function applySecurity(app) {
       // Swagger UI uses inline assets/scripts. Disable CSP in non-production
       // so /api/docs renders during local development.
       contentSecurityPolicy: isProd,
-    })
+      // Avatar files are served from backend origin (:5050) and rendered by
+      // frontend origin (:5173), so allow cross-origin resource embedding.
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
   );
   const allowedOrigins = new Set([
     env.clientUrl,
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:4173',
-    'http://127.0.0.1:4173',
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
   ]);
 
   app.use(
@@ -30,9 +33,9 @@ export function applySecurity(app) {
       },
       credentials: true,
       optionsSuccessStatus: 200,
-    })
+    }),
   );
   if (!isTest) {
-    app.use(morgan(isProd ? 'combined' : 'dev'));
+    app.use(morgan(isProd ? "combined" : "dev"));
   }
 }

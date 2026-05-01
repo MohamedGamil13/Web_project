@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -16,7 +16,7 @@ import {
   Stack,
   TextField,
   Typography,
-} from '@mui/material';
+} from "@mui/material";
 import {
   AMENITY_OPTIONS,
   PRICE_MAX,
@@ -24,12 +24,15 @@ import {
   PRICE_STEP,
   RATING_OPTIONS,
   SORT_OPTIONS,
-} from './filters';
+} from "./filters";
 
 function priceFromFilters(filters) {
-  const lo = filters.minPrice === '' ? PRICE_MIN : Number(filters.minPrice);
-  const hi = filters.maxPrice === '' ? PRICE_MAX : Number(filters.maxPrice);
-  return [Number.isFinite(lo) ? lo : PRICE_MIN, Number.isFinite(hi) ? hi : PRICE_MAX];
+  const lo = filters.minPrice === "" ? PRICE_MIN : Number(filters.minPrice);
+  const hi = filters.maxPrice === "" ? PRICE_MAX : Number(filters.maxPrice);
+  return [
+    Number.isFinite(lo) ? lo : PRICE_MIN,
+    Number.isFinite(hi) ? hi : PRICE_MAX,
+  ];
 }
 
 export function HotelFilters({ filters, onChange, onReset }) {
@@ -42,8 +45,8 @@ export function HotelFilters({ filters, onChange, onReset }) {
   function commitPrice(value) {
     const [lo, hi] = value;
     onChange({
-      minPrice: lo === PRICE_MIN ? '' : String(lo),
-      maxPrice: hi === PRICE_MAX ? '' : String(hi),
+      minPrice: lo === PRICE_MIN ? "" : String(lo),
+      maxPrice: hi === PRICE_MAX ? "" : String(hi),
       page: 1,
     });
   }
@@ -56,10 +59,13 @@ export function HotelFilters({ filters, onChange, onReset }) {
   }
 
   const [lo, hi] = priceRange;
-  const priceLabel = `$${lo} – $${hi}${hi >= PRICE_MAX ? '+' : ''}`;
+  const priceLabel = `$${lo} – $${hi}${hi >= PRICE_MAX ? "+" : ""}`;
 
   return (
-    <Card variant="outlined" sx={{ position: 'sticky', top: 16, alignSelf: 'flex-start' }}>
+    <Card
+      variant="outlined"
+      sx={{ position: "sticky", top: 16, alignSelf: "flex-start" }}
+    >
       <CardHeader
         title={
           <Typography variant="subtitle1" fontWeight={600}>
@@ -67,14 +73,19 @@ export function HotelFilters({ filters, onChange, onReset }) {
           </Typography>
         }
         action={
-          <Button variant="text" size="small" onClick={onReset} sx={{ mt: 0.25 }}>
+          <Button
+            variant="text"
+            size="small"
+            onClick={onReset}
+            sx={{ mt: 0.25 }}
+          >
             Reset
           </Button>
         }
         sx={{
           py: 1.25,
           px: 2,
-          '& .MuiCardHeader-action': { m: 0, alignSelf: 'center' },
+          "& .MuiCardHeader-action": { m: 0, alignSelf: "center" },
         }}
       />
       <Divider />
@@ -90,14 +101,21 @@ export function HotelFilters({ filters, onChange, onReset }) {
           />
 
           <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+            <Stack
+              direction="row"
+              sx={{
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 1,
+              }}
+            >
               <Typography variant="body2" fontWeight={500}>
                 Price per night
               </Typography>
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ fontVariantNumeric: 'tabular-nums' }}
+                sx={{ fontVariantNumeric: "tabular-nums" }}
               >
                 {priceLabel}
               </Typography>
@@ -116,18 +134,21 @@ export function HotelFilters({ filters, onChange, onReset }) {
                 size="small"
                 sx={{ py: 1 }}
               />
-              <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
+              <Stack
+                direction="row"
+                sx={{ justifyContent: "space-between", mt: 0.5 }}
+              >
                 <Typography
                   variant="caption"
                   color="text.secondary"
-                  sx={{ fontVariantNumeric: 'tabular-nums' }}
+                  sx={{ fontVariantNumeric: "tabular-nums" }}
                 >
                   ${PRICE_MIN}
                 </Typography>
                 <Typography
                   variant="caption"
                   color="text.secondary"
-                  sx={{ fontVariantNumeric: 'tabular-nums' }}
+                  sx={{ fontVariantNumeric: "tabular-nums" }}
                 >
                   ${PRICE_MAX}+
                 </Typography>
@@ -144,7 +165,7 @@ export function HotelFilters({ filters, onChange, onReset }) {
               onChange={(e) => onChange({ minStars: e.target.value, page: 1 })}
             >
               {RATING_OPTIONS.map((o) => (
-                <MenuItem key={o.value || 'any'} value={o.value}>
+                <MenuItem key={o.value || "any"} value={o.value}>
                   {o.label}
                 </MenuItem>
               ))}
@@ -157,8 +178,8 @@ export function HotelFilters({ filters, onChange, onReset }) {
             </Typography>
             <Box
               sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
                 rowGap: 0.5,
                 columnGap: 1,
               }}
@@ -192,7 +213,7 @@ export function HotelFilters({ filters, onChange, onReset }) {
               onChange={(e) => onChange({ sort: e.target.value, page: 1 })}
             >
               {SORT_OPTIONS.map((o) => (
-                <MenuItem key={o.value || 'default'} value={o.value}>
+                <MenuItem key={o.value || "default"} value={o.value}>
                   {o.label}
                 </MenuItem>
               ))}

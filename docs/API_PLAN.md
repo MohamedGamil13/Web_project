@@ -3,7 +3,7 @@
 Base URL: `/api`
 All responses follow the envelope defined in `TRD.md` §3. Authenticated endpoints require `Authorization: Bearer <jwt>`.
 
-> **Locked decisions:** local-only demo target; shadcn/ui + react-hook-form + zod on the FE; placeholder image URLs seeded into `hotel.images`; reservation `completed` status is computed lazily on read; refresh-token / cookie auth is out of scope; `PATCH /users/me/password` ships in Phase 7.
+> **Locked decisions:** local-only demo target; **Formik + Yup + Material-UI v9** on the FE; placeholder image URLs seeded into `hotel.images`; reservation `status` is `active|cancelled` (past stays derived from dates client-side, no scheduler); refresh-token / cookie auth is out of scope; password change is **shipped** via a verify-then-update flow with a short-lived re-auth token; avatars are stored as files via multer (multipart upload) and served from `GET /users/:id/avatar`.
 
 ## 0. Conventions
 - Dates are ISO 8601 strings (`YYYY-MM-DD` for date-only, full ISO for timestamps).
@@ -38,14 +38,24 @@ All responses follow the envelope defined in `TRD.md` §3. Authenticated endpoin
 Login error message: `"Invalid email or password"` is used for both an unknown email and a wrong password (no field-level enumeration).
 Register conflict: 409 `CONFLICT` with `error.message = "An account with that email already exists"`.
 
-### 2.2 Users (`/users`) — **shipped in Phase 3**
-| Method | Path | Auth | Body | Success | Errors |
-|--------|------|------|------|---------|--------|
+### 2.2 Users (`/users`) — **shipped**
+| Method | Path | Auth | Body / Headers | Success | Errors |
+|--------|------|------|----------------|---------|--------|
 | GET | `/users/me` | user | — | 200 `user` | 401 |
-| PATCH | `/users/me` | user | `{ name?, email?, phone?, avatarUrl? }` (≥ 1 field) | 200 `user` | 422 validation, 409 email taken |
-| PATCH | `/users/me/password` | user | `{ currentPassword, newPassword }` | 200 `{ ok: true }` | 401 wrong current, 422 | _Phase 7_ |
+| PATCH | `/users/me` | user | `{ name?, email?, phone? }` (≥ 1 field) | 200 `user` | 422 validation, 409 email taken |
+| POST | `/users/me/password/verify` | user | `{ currentPassword }` | 200 `{ reauthToken, expiresIn }` (token valid 10 min) | 401 wrong current, 422 |
+| PATCH | `/users/me/password` | user | `{ newPassword }` + header `x-reauth-token: <token-from-verify>` | 200 `{ ok: true }` | 401 missing/expired re-auth token, 422 |
+| POST | `/users/me/avatar` | user | `multipart/form-data` field `avatar` (image, ≤ 5 MB, jpg/png/webp/gif) | 200 `user` (with refreshed `avatarUrl`) | 401, 422 invalid file |
+| DELETE | `/users/me/avatar` | user | — | 200 `user` | 401 |
+| GET | `/users/:id/avatar` | user | — (or `?token=<jwt>` for `<img>` tags) | 200 binary image | 401, 404 no avatar |
 
-Empty `phone` / `avatarUrl` strings clear the field. Email change re-checks uniqueness.
+**Notes:**
+- Email change re-checks uniqueness; passing `phone: ""` clears the field.
+- Avatar is **not** editable through `PATCH /users/me`. Use the dedicated multipart endpoint. The user document stores a private `avatarPath`; the API exposes a public `avatarUrl` of the form `/api/v1/users/<id>/avatar`. Auth for the GET is checked from either the `Authorization: Bearer …` header **or** a `?token=<jwt>` query string (so plain `<img src>` tags can render the avatar without custom headers).
+- Password change is a two-step flow:
+  1. `POST /users/me/password/verify` with the current password → server returns a 10-minute `reauthToken`.
+  2. `PATCH /users/me/password` with the new password and `x-reauth-token: <reauthToken>` → server hashes and persists.
+  This separates re-auth from the payload so the FE can cache the token across UI steps.
 
 ### 2.3 Hotels (`/hotels`) — **shipped in Phase 4**
 | Method | Path | Auth | Query / Body | Success | Errors |
@@ -108,13 +118,36 @@ All endpoints require `Authorization: Bearer <jwt>`. Users only ever see and act
 }
 ```
 
-### 2.6 Reviews (`/hotels/:id/reviews`, `/reviews/:id`)
+### 2.6 Reviews (`/hotels/:id/reviews`, `/reviews/:id`) — **shipped in Phase 7**
 | Method | Path | Auth | Body / Query | Success | Errors |
 |--------|------|------|--------------|---------|--------|
-| GET | `/hotels/:id/reviews` | — | `page`, `pageSize`, `sort` (`-createdAt`, `-rating`) | 200 list of `review` + meta | 404 hotel |
-| POST | `/hotels/:id/reviews` | user | `{ rating, comment }` | 201 `review` (or 200 if upsert overwrote existing) | 403 (no completed reservation), 422 |
-| PATCH | `/reviews/:id` | user | `{ rating?, comment? }` | 200 `review` | 403, 404, 422 |
-| DELETE | `/reviews/:id` | user | — | 200 `{ ok: true }` | 403, 404 |
+| GET | `/hotels/:id/reviews` | — | `page` (≥ 1, default 1), `pageSize` (1–50, default 10), `sort` (`-createdAt` \| `createdAt` \| `-rating` \| `rating`, default `-createdAt`) | 200 list of `review` + `meta: { page, pageSize, total }` | 422, 404 hotel |
+| POST | `/hotels/:id/reviews` | user | `{ rating, comment? }` | 201 `review` | 401, 422, 404 hotel, **409** (already reviewed) |
+| GET | `/hotels/:id/reviews/me` | user | — | 200 `review \| null` | 401, 422 |
+| PATCH | `/reviews/:id` | user | `{ rating?, comment? }` (≥ 1 field) | 200 `review` | 401, 403 (not owner), 404, 422 |
+| DELETE | `/reviews/:id` | user | — | 200 `{ id }` | 401, 403, 404, 422 |
+
+**Validation:**
+- `rating` is an integer 1–5.
+- `comment` is optional, max 1000 characters.
+
+**Business rules:**
+- One review per (user, hotel) — enforced by a unique compound index on `{ user, hotel }`. POSTing a second review for the same hotel returns 409 with the message *"You have already reviewed this hotel — update your existing review instead"*.
+- Only the owner can `PATCH` or `DELETE` their review (403 otherwise).
+- After every create / update / delete the hotel's `reviewAvg` and `reviewCount` are recomputed from the full set of reviews via a Mongo `$group` aggregation and persisted on the Hotel document.
+
+`review` shape:
+```json
+{
+  "id": "…",
+  "hotelId": "…",
+  "rating": 5,
+  "comment": "Great stay near the river.",
+  "user": { "id": "…", "name": "Alice", "avatarUrl": "…" | null },
+  "createdAt": "2026-05-01T10:00:00.000Z",
+  "updatedAt": "2026-05-01T10:00:00.000Z"
+}
+```
 
 `review` shape: `{ id, hotel, user: { id, name }, rating, comment, createdAt, updatedAt }`.
 

@@ -1,9 +1,18 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const roomSchema = new mongoose.Schema(
   {
-    hotel: { type: mongoose.Schema.Types.ObjectId, ref: 'Hotel', required: true, index: true },
-    roomType: { type: String, enum: ['single', 'double', 'suite', 'family'], required: true },
+    hotel: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hotel",
+      required: true,
+      index: true,
+    },
+    roomType: {
+      type: String,
+      enum: ["single", "double", "suite", "family"],
+      required: true,
+    },
     capacity: { type: Number, min: 1, max: 8, required: true },
     pricePerNight: { type: Number, min: 0, required: true },
     quantity: { type: Number, min: 1, default: 1 },
@@ -21,7 +30,7 @@ const roomSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
-export const Room = mongoose.model('Room', roomSchema);
+export const Room = mongoose.model("Room", roomSchema);

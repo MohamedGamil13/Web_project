@@ -1,10 +1,10 @@
-import { Link as RouterLink } from 'react-router-dom';
-import { Button, Container, Stack, Typography } from '@mui/material';
+import { Link as RouterLink } from "react-router-dom";
+import { Button, Container, Stack, Typography } from "@mui/material";
 
 export default function NotFoundPage() {
   return (
-    <Container maxWidth="sm" sx={{ py: 10, textAlign: 'center' }}>
-      <Stack spacing={2} alignItems="center">
+    <Container maxWidth="sm" sx={{ py: 10, textAlign: "center" }}>
+      <Stack spacing={2} sx={{ alignItems: "center" }}>
         <Typography variant="h2" fontWeight={700}>
           404
         </Typography>

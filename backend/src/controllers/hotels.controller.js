@@ -1,6 +1,6 @@
-import { asyncHandler } from '../utils/asyncHandler.js';
-import { ok, created } from '../utils/response.js';
-import * as hotelsService from '../services/hotels.service.js';
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ok, created } from "../utils/response.js";
+import * as hotelsService from "../services/hotels.service.js";
 
 export const listHotels = asyncHandler(async (req, res) => {
   const result = await hotelsService.listHotels(req.query);

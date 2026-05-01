@@ -3,7 +3,7 @@
 ## 0. Locked Decisions
 - Demo target: **local-only** (frontend dev server + backend dev server + local/Atlas Mongo). No cloud deploy required.
 - Frontend forms: **Formik + Yup** (rubric-aligned). RHF/Zod removed.
-- Frontend UI framework: **Material-UI v6 + Emotion** end-to-end. Tailwind, shadcn, and Radix have been removed; MUI is the only component library in the runtime.
+- Frontend UI framework: **Material-UI v9 + Emotion** end-to-end. Tailwind, shadcn, and Radix have been removed; MUI is the only component library in the runtime.
 - Hotel images: URL string fields populated with placeholder links via the seed script.
 - Reservation completion: computed **lazily on read** (no scheduler).
 - Password-change endpoint (`PATCH /users/me/password`): delivered in **Phase 8** polish.
@@ -14,7 +14,7 @@
 ### Frontend (`/frontend`)
 - React 19 + Vite
 - React Router v7 for routing
-- **Material-UI v6 + Emotion** is the only component library. All shells (AppBar/Toolbar/Container), all forms (TextField/Select/Checkbox/Slider/Button), all surfaces (Card/Paper/Dialog/Alert/Skeleton/Pagination/Chip/Rating), and all icons (`@mui/icons-material`) are MUI. MUI is wired via `ThemeProvider` + `CssBaseline` in `app/Providers.jsx`.
+- **Material-UI v9 + Emotion** is the only component library. All shells (AppBar/Toolbar/Container), all forms (TextField/Select/Checkbox/Slider/Button), all surfaces (Card/Paper/Dialog/Alert/Skeleton/Pagination/Chip/Rating), all icons (`@mui/icons-material`), and the date pickers (`@mui/x-date-pickers` + dayjs) are MUI. The provider chain is wired in `app/Providers.jsx`: `BrowserRouter → ThemeProvider → CssBaseline → LocalizationProvider → AuthProvider`.
 - **Formik + Yup** for form state and validation. Field-level integration via the `FTextField` helper in `lib/formik-mui.jsx`.
 - HTTP: axios (single shared `apiClient` with interceptors).
 - State: React context for current user/session; component-local state for everything else (no Redux).
@@ -35,28 +35,31 @@
 ```
 /frontend
   src/
-    api/           # axios client + per-resource modules
-    components/    # shared UI (shadcn primitives, layout)
-    pages/         # route-level components
-    routes/        # router config + ProtectedRoute
-    hooks/
-    context/       # AuthContext
-    lib/           # utils, validation schemas
-    mocks/         # fixtures used until each integration checkpoint
+    app/           # Providers (MUI/Localization/Auth), App, Home, NotFound
+    components/
+      shared/      # Layout, Navbar (avatar dropdown), Footer, ConfirmDialog, UserAvatar
+    features/
+      auth/        # AuthContext, Yup schemas, api, login/register/profile pages
+      hotels/      # api, filters, HotelCard, HotelFilters, list + details pages
+      reservations/# api, schemas, ReserveDialog, ReservationCard, current + history pages
+      reviews/     # api, schemas, ReviewForm, ReviewItem, ReviewsSection
+    hooks/         # useAuth, useDebouncedValue
+    lib/           # apiClient (axios), env, formik-mui, imageResize
+    routes/        # AppRoutes, ProtectedRoute, PublicOnlyRoute
 /backend
   src/
     config/        # env loader, db connection
-    middleware/    # auth, errorHandler, validate
-    modules/
-      auth/
-      users/
-      hotels/
-      rooms/
-      reservations/
-      reviews/
-    utils/         # response envelope, asyncHandler
-    server.js
-  tests/
+    controllers/   # thin asyncHandler wrappers
+    docs/          # Swagger setup
+    middleware/    # auth, errorHandler, notFound, security, validate
+    models/        # User, Hotel, Room, Reservation, Review
+    routes/v1/     # health, auth, users, hotels, reservations, reviews
+    scripts/       # seed.js
+    services/      # business logic per resource
+    utils/         # ApiError, asyncHandler, response (ok/created)
+    validators/    # Joi schemas
+    app.js, server.js
+  tests/           # one suite per endpoint group
 ```
 
 ## 3. API Contract Style
@@ -121,7 +124,7 @@ Every successful response follows:
 
 ## 7. Configuration & Environment
 - `.env.example` provides all required keys: `PORT`, `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `CLIENT_URL`.
-- Frontend uses Vite env vars: `VITE_API_BASE_URL` (default `http://localhost:5000/api`).
+- Frontend uses Vite env vars: `VITE_API_BASE_URL` (default `http://localhost:5050/api/v1`).
 - CORS allows the frontend origin from `CLIENT_URL`.
 
 ## 8. Testing

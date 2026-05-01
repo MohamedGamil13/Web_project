@@ -42,13 +42,16 @@
 
 ### Epic B — Profile
 **B1. View profile**
-- AC: `/profile` shows name, email, phone, avatar URL, role, and member-since date. Hydrated via `GET /auth/me` (or `GET /users/me`).
+- AC: `/profile` shows name, email, phone, avatar (image or initials fallback), role, and member-since date. Hydrated via `GET /auth/me` (or `GET /users/me`).
 
 **B2. Edit profile**
-- AC: name, email, phone, and avatar URL are editable via `PATCH /users/me`. At least one field must be present in the patch (server returns 422 otherwise). Email change re-checks uniqueness — duplicate → 409 surfaced as a field-level error on the email input. Avatar URL must be a valid URL when present. Empty strings on phone/avatar clear the field. On success the page exits edit mode and shows a "Saved" timestamp; the global auth context user is refreshed so the navbar reflects the new name.
+- AC: name, email, and phone are editable via `PATCH /users/me`. At least one field must be present in the patch (server returns 422 otherwise). Email change re-checks uniqueness — duplicate → 409 surfaced as a field-level error on the email input. Empty `phone` clears the field. On success the page exits edit mode and shows a "Saved" timestamp; the global auth context user is refreshed so the navbar reflects the new name.
 
-**B3. Change password** _(deferred to Phase 7 polish)_
-- AC: requires current password + new password (same complexity rules); on success a toast confirms; old password is rejected with 401.
+**B2a. Avatar upload**
+- AC: avatar is managed independently of the JSON profile patch. The profile page exposes an *Upload photo* button (and *Remove* once one is set). The picker accepts jpg/png/webp/gif up to 5 MB. Uploads go to `POST /users/me/avatar` as `multipart/form-data` (field name `avatar`); the server stores the file under `backend/storage/avatars/<filename>` and returns the refreshed user with `avatarUrl: "/api/v1/users/<id>/avatar"`. *Remove* calls `DELETE /users/me/avatar` and unsets the path. The navbar avatar picture refreshes immediately because `setUser` propagates through `AuthContext`. When no avatar is set, `<UserAvatar>` falls back to colored initials derived deterministically from the user's name.
+
+**B3. Change password** *(shipped — verify + update with re-auth token)*
+- AC: a dedicated route at `/profile/password` collects `currentPassword`, `newPassword`, and `confirmNewPassword`. The page first calls `POST /users/me/password/verify` with the current password; on success the server returns a 10-minute `reauthToken` which the FE caches in `localStorage`. The page then enables the *new password* form and calls `PATCH /users/me/password` with `{ newPassword }` plus header `x-reauth-token: <reauthToken>`. Wrong current password → 401. Weak `newPassword` (< 8 chars or missing letter/digit) → 422 with field-level error. Mismatched `confirmNewPassword` is caught client-side via Yup. On success the cached re-auth token is cleared and a confirmation banner shows.
 
 ### Epic C — Hotel Search
 **C1. Search by city / keyword**
@@ -76,7 +79,7 @@
 - AC:
   - Trigger: clicking *Reserve* on a room card on the hotel detail page opens a modal dialog. Unauthenticated users see a "Sign in to reserve" variant of the dialog with a *Sign in* button that preserves `returnTo`.
   - Inputs: `roomId` (pre-filled from the picked room), `checkIn` (date), `checkOut` (date), `guests`.
-  - Client-side validation (zod): `checkIn` not in the past; `checkOut > checkIn`; `guests` integer ≥ 1.
+  - Client-side validation (Yup): `checkIn` not in the past; `checkOut > checkIn`; `guests` integer ≥ 1.
   - Live total: while both dates are picked, the dialog shows `nights × pricePerNight = total`; the *Confirm* button shows the running total.
   - Server-side validation (Joi + service): same as client + `guests ≤ room.capacity` (422 with `{ field: 'guests' }`).
   - Availability: server rejects with HTTP 409 + message `"Room is not available for the selected dates"` when overlapping active bookings ≥ `room.quantity`. The dialog surfaces the conflict in an inline destructive banner so the user can pick different dates without losing the form.

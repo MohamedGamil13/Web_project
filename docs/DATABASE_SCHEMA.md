@@ -24,14 +24,17 @@ User (1) ────< Reservation >──── (1) Room ────(N..1)─�
 | `_id` | ObjectId | PK |
 | `name` | String, required, 2–80 chars | |
 | `email` | String, required, lowercase, **unique index** | |
-| `passwordHash` | String, required | bcrypt; never returned by the API |
+| `passwordHash` | String, required, `select: false` | bcrypt; never returned by the API |
+| `phone` | String, optional, ≤ 40 chars | |
+| `avatarPath` | String, optional | filename written by Multer into `backend/storage/avatars/`; never sent to the client |
 | `role` | String enum: `user` \| `admin`, default `user` | |
-| `avatarUrl` | String, optional | |
 | `createdAt`/`updatedAt` | Date | auto |
 
 **Indexes:** `{ email: 1 }` unique.
 
-**Hidden fields on serialization:** `passwordHash`, `__v`.
+**Hidden fields on serialization:** `passwordHash`, `__v`, `avatarPath`.
+
+**`toJSON` virtual:** the `User.toJSON` transform replaces the private `avatarPath` with a public `avatarUrl` of the form `/api/v1/users/<id>/avatar` (or `null` when unset). The avatar GET endpoint streams the file from `backend/storage/avatars/<avatarPath>`. Storage path layout is intentionally opaque so files can never be addressed directly.
 
 ### 2.2 `hotels`
 | Field | Type | Notes |
@@ -103,11 +106,18 @@ User (1) ────< Reservation >──── (1) Room ────(N..1)─�
 | `comment` | String, ≤ 1000 chars | |
 | `createdAt`/`updatedAt` | Date | auto |
 
-**Indexes:** `{ hotel: 1, createdAt: -1 }`, `{ user: 1, hotel: 1 }` **unique** (one review per user per hotel; updates overwrite).
+**Indexes:** `{ hotel: 1, createdAt: -1 }`, `{ user: 1, hotel: 1 }` **unique** — one review per (user, hotel). A second `POST` attempt returns 409.
 
-**Eligibility rule:** a user may post a review for `hotel` only if they have at least one reservation for that hotel with `status = completed`. Enforced at the controller level.
+**Eligibility:** any authenticated user can post a review for any hotel. The earlier "must have a completed reservation" rule was dropped in Phase 7 to keep the demo flow simple — re-add it here later if the rubric requires it.
 
-**Aggregate maintenance:** when a review is created, updated, or deleted, the hotel's `avgRating` and `reviewCount` are recomputed in the same request.
+**Aggregate maintenance:** on every create / update / delete the hotel's `reviewAvg` (rounded to 1 decimal) and `reviewCount` are recomputed via:
+```js
+Review.aggregate([
+  { $match: { hotel: ObjectId(hotelId) } },
+  { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } }
+])
+```
+…and written back to the Hotel document in the same request.
 
 ## 3. Seed Data
 A seed script (`backend/src/scripts/seed.js`, written by BE2) inserts:

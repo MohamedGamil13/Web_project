@@ -1,26 +1,26 @@
-import { Route, Routes } from 'react-router-dom';
-import { Layout } from '@/components/shared/Layout';
-import { ProtectedRoute } from '@/routes/ProtectedRoute';
-import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
+import { Route, Routes } from "react-router-dom";
+import { Layout } from "@/components/shared/Layout";
+import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute";
 
-import HomePage from '@/app/HomePage';
-import NotFoundPage from '@/app/NotFoundPage';
+import NotFoundPage from "@/app/NotFoundPage";
 
-import LoginPage from '@/features/auth/pages/LoginPage';
-import RegisterPage from '@/features/auth/pages/RegisterPage';
-import ProfilePage from '@/features/auth/pages/ProfilePage';
+import LoginPage from "@/features/auth/pages/LoginPage";
+import RegisterPage from "@/features/auth/pages/RegisterPage";
+import ProfilePage from "@/features/auth/pages/ProfilePage";
+import ChangePasswordPage from "@/features/auth/pages/ChangePasswordPage";
 
-import HotelsListPage from '@/features/hotels/pages/HotelsListPage';
-import HotelDetailsPage from '@/features/hotels/pages/HotelDetailsPage';
+import HotelsListPage from "@/features/hotels/pages/HotelsListPage";
+import HotelDetailsPage from "@/features/hotels/pages/HotelDetailsPage";
 
-import ReservationsPage from '@/features/reservations/pages/ReservationsPage';
-import ReservationsHistoryPage from '@/features/reservations/pages/ReservationsHistoryPage';
+import ReservationsPage from "@/features/reservations/pages/ReservationsPage";
+import ReservationsHistoryPage from "@/features/reservations/pages/ReservationsHistoryPage";
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<HotelsListPage />} />
 
         <Route element={<PublicOnlyRoute />}>
           <Route path="login" element={<LoginPage />} />
@@ -32,8 +32,12 @@ export function AppRoutes() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="profile/password" element={<ChangePasswordPage />} />
           <Route path="reservations" element={<ReservationsPage />} />
-          <Route path="reservations/history" element={<ReservationsHistoryPage />} />
+          <Route
+            path="reservations/history"
+            element={<ReservationsHistoryPage />}
+          />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

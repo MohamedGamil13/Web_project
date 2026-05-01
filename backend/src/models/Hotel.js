@@ -1,12 +1,12 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const hotelSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 200 },
-    description: { type: String, default: '' },
+    description: { type: String, default: "" },
     city: { type: String, required: true, trim: true, index: true },
     country: { type: String, required: true, trim: true },
-    address: { type: String, default: '' },
+    address: { type: String, default: "" },
     starRating: { type: Number, min: 1, max: 5, required: true },
     amenities: { type: [String], default: [] },
     images: { type: [String], default: [] },
@@ -24,11 +24,11 @@ const hotelSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
-hotelSchema.index({ name: 'text', city: 'text', description: 'text' });
+hotelSchema.index({ name: "text", city: "text", description: "text" });
 hotelSchema.index({ priceFrom: 1 });
 hotelSchema.index({ reviewAvg: -1 });
 
-export const Hotel = mongoose.model('Hotel', hotelSchema);
+export const Hotel = mongoose.model("Hotel", hotelSchema);

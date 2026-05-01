@@ -1,7 +1,7 @@
-import { apiClient, unwrap } from '@/lib/apiClient';
+import { apiClient, unwrap } from "@/lib/apiClient";
 
 export async function listMyReservations() {
-  const res = await apiClient.get('/reservations/me');
+  const res = await apiClient.get("/reservations/me");
   return unwrap(res) ?? [];
 }
 
@@ -11,7 +11,7 @@ export async function getReservation(id) {
 }
 
 export async function createReservation(payload) {
-  const res = await apiClient.post('/reservations', payload);
+  const res = await apiClient.post("/reservations", payload);
   return unwrap(res);
 }
 

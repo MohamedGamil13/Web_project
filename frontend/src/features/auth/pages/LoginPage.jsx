@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Formik, Form } from 'formik';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from "react";
+import { Formik, Form } from "formik";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -9,18 +9,18 @@ import {
   Paper,
   Stack,
   Typography,
-} from '@mui/material';
-import { FTextField } from '@/lib/formik-mui';
-import { useAuth } from '@/hooks/useAuth';
-import { loginSchema } from '../schemas';
-import { login as loginApi } from '../api';
+} from "@mui/material";
+import { FTextField } from "@/lib/formik-mui";
+import { useAuth } from "@/hooks/useAuth";
+import { loginSchema } from "../schemas";
+import { login as loginApi } from "../api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { login } = useAuth();
   const [serverError, setServerError] = useState(null);
-  const returnTo = params.get('returnTo') ?? '/';
+  const returnTo = params.get("returnTo") ?? "/";
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
@@ -35,7 +35,7 @@ export default function LoginPage() {
         </Stack>
 
         <Formik
-          initialValues={{ email: '', password: '' }}
+          initialValues={{ email: "", password: "" }}
           validationSchema={loginSchema}
           onSubmit={async (values, { setSubmitting }) => {
             setServerError(null);
@@ -44,7 +44,7 @@ export default function LoginPage() {
               login(user, token);
               navigate(decodeURIComponent(returnTo), { replace: true });
             } catch (err) {
-              setServerError(err?.message ?? 'Login failed');
+              setServerError(err?.message ?? "Login failed");
             } finally {
               setSubmitting(false);
             }
@@ -53,7 +53,12 @@ export default function LoginPage() {
           {({ isSubmitting }) => (
             <Form noValidate>
               <Stack spacing={2.5}>
-                <FTextField name="email" label="Email" type="email" autoComplete="email" />
+                <FTextField
+                  name="email"
+                  label="Email"
+                  type="email"
+                  autoComplete="email"
+                />
                 <FTextField
                   name="password"
                   label="Password"
@@ -61,11 +66,19 @@ export default function LoginPage() {
                   autoComplete="current-password"
                 />
                 {serverError && <Alert severity="error">{serverError}</Alert>}
-                <Button type="submit" variant="contained" disabled={isSubmitting}>
-                  {isSubmitting ? 'Signing in…' : 'Sign in'}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing in…" : "Sign in"}
                 </Button>
-                <Typography variant="body2" textAlign="center" color="text.secondary">
-                  No account?{' '}
+                <Typography
+                  variant="body2"
+                  textAlign="center"
+                  color="text.secondary"
+                >
+                  No account?{" "}
                   <MuiLink component={Link} to="/register" underline="hover">
                     Create one
                   </MuiLink>

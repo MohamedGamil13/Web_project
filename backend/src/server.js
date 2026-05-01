@@ -1,6 +1,6 @@
-import app from './app.js';
-import { env } from './config/env.js';
-import { connectDb, disconnectDb } from './config/db.js';
+import app from "./app.js";
+import { env } from "./config/env.js";
+import { connectDb, disconnectDb } from "./config/db.js";
 
 async function bootstrap() {
   try {
@@ -21,10 +21,10 @@ async function bootstrap() {
       });
     };
 
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
   } catch (error) {
-    console.error('[server] failed to start:', error.message);
+    console.error("[server] failed to start:", error.message);
     process.exit(1);
   }
 }

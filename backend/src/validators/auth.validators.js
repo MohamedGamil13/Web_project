@@ -1,13 +1,13 @@
-import Joi from 'joi';
+import Joi from "joi";
 
 const passwordRule = Joi.string()
   .min(8)
   .max(128)
-  .pattern(/[A-Za-z]/, 'letter')
-  .pattern(/[0-9]/, 'number')
+  .pattern(/[A-Za-z]/, "letter")
+  .pattern(/[0-9]/, "number")
   .messages({
-    'string.min': 'Password must be at least 8 characters',
-    'string.pattern.name': 'Password must contain a {#name}',
+    "string.min": "Password must be at least 8 characters",
+    "string.pattern.name": "Password must contain a {#name}",
   });
 
 export const registerSchema = Joi.object({

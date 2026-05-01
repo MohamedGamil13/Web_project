@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import { env } from './env.js';
+import mongoose from "mongoose";
+import { env } from "./env.js";
 
-mongoose.set('strictQuery', true);
+mongoose.set("strictQuery", true);
 
 export async function connectDb() {
   await mongoose.connect(env.mongoUri);

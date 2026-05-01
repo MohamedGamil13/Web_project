@@ -1,8 +1,14 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true, minlength: 2, maxlength: 80 },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 80,
+    },
     email: {
       type: String,
       required: true,
@@ -13,8 +19,8 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: { type: String, required: true, select: false },
     phone: { type: String, trim: true, default: undefined },
-    avatarUrl: { type: String, trim: true, default: undefined },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    avatarPath: { type: String, trim: true, default: undefined },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
   },
   {
     timestamps: true,
@@ -25,10 +31,14 @@ const userSchema = new mongoose.Schema(
         ret.id = ret._id?.toString();
         delete ret._id;
         delete ret.passwordHash;
+        ret.avatarUrl = ret.avatarPath
+          ? `/api/v1/users/${ret.id}/avatar`
+          : null;
+        delete ret.avatarPath;
         return ret;
       },
     },
-  }
+  },
 );
 
-export const User = mongoose.model('User', userSchema);
+export const User = mongoose.model("User", userSchema);

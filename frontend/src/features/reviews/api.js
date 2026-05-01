@@ -1,8 +1,13 @@
-import { apiClient, unwrap } from '@/lib/apiClient';
+import { apiClient, unwrap } from "@/lib/apiClient";
 
 export async function listHotelReviews(hotelId, params) {
   const res = await apiClient.get(`/hotels/${hotelId}/reviews`, { params });
-  return { items: unwrap(res), meta: res.data?.meta };
+  return { items: unwrap(res) ?? [], meta: res.data?.meta };
+}
+
+export async function getMyReviewForHotel(hotelId) {
+  const res = await apiClient.get(`/hotels/${hotelId}/reviews/me`);
+  return unwrap(res); // null if user hasn't reviewed yet
 }
 
 export async function createReview(hotelId, payload) {

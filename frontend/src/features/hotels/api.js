@@ -1,8 +1,11 @@
-import { apiClient } from '@/lib/apiClient';
+import { apiClient } from "@/lib/apiClient";
 
 export async function listHotels(params) {
-  const res = await apiClient.get('/hotels', { params });
-  return { items: res.data?.data ?? [], meta: res.data?.meta ?? { page: 1, pageSize: 10, total: 0 } };
+  const res = await apiClient.get("/hotels", { params });
+  return {
+    items: res.data?.data ?? [],
+    meta: res.data?.meta ?? { page: 1, pageSize: 10, total: 0 },
+  };
 }
 
 export async function getHotel(id) {
