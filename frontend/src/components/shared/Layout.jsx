@@ -1,15 +1,16 @@
 import { Outlet } from 'react-router-dom';
+import { Box } from '@mui/material';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 
 export function Layout() {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <Box component="main" sx={{ flex: 1 }}>
         <Outlet />
-      </main>
+      </Box>
       <Footer />
-    </div>
+    </Box>
   );
 }

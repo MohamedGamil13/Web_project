@@ -1,14 +1,20 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Link as RouterLink } from 'react-router-dom';
+import { Button, Container, Stack, Typography } from '@mui/material';
 
 export default function NotFoundPage() {
   return (
-    <div className="flex flex-col items-center gap-4 py-16 text-center">
-      <h1 className="text-4xl font-bold">404</h1>
-      <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
-      <Button asChild>
-        <Link to="/">Back to home</Link>
-      </Button>
-    </div>
+    <Container maxWidth="sm" sx={{ py: 10, textAlign: 'center' }}>
+      <Stack spacing={2} alignItems="center">
+        <Typography variant="h2" fontWeight={700}>
+          404
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          The page you're looking for doesn't exist.
+        </Typography>
+        <Button component={RouterLink} to="/" variant="contained">
+          Back to home
+        </Button>
+      </Stack>
+    </Container>
   );
 }

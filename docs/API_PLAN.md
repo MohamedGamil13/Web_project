@@ -47,32 +47,66 @@ Register conflict: 409 `CONFLICT` with `error.message = "An account with that em
 
 Empty `phone` / `avatarUrl` strings clear the field. Email change re-checks uniqueness.
 
-### 2.3 Hotels (`/hotels`)
-| Method | Path | Auth | Query | Success | Errors |
-|--------|------|------|-------|---------|--------|
-| GET | `/hotels` | — | `q`, `city`, `minPrice`, `maxPrice`, `minStars`, `amenities` (comma-sep), `sort` (`price`, `-price`, `-rating`, `-createdAt`), `page`, `pageSize` | 200 list of `hotel` + meta | 422 |
-| GET | `/hotels/:id` | — | — | 200 `hotelDetail` (hotel + `rooms[]` + `avgRating` + `reviewCount`) | 404 |
+### 2.3 Hotels (`/hotels`) — **shipped in Phase 4**
+| Method | Path | Auth | Query / Body | Success | Errors |
+|--------|------|------|--------------|---------|--------|
+| GET | `/hotels` | — | `q`, `city`, `minPrice`, `maxPrice`, `minStars`, `amenities` (comma-sep, lowercased), `sort` (`price`, `-price`, `-rating`, `name`, `-name`, `-createdAt`), `page` (≥ 1, default 1), `pageSize` (1–50, default 10) | 200 list of `hotel` + `meta: { page, pageSize, total }` | 422 (e.g. `maxPrice < minPrice`, unknown sort) |
+| GET | `/hotels/:id` | — | — | 200 `hotelDetail` (hotel + `rooms[]`) | 422 invalid id, 404 |
+| GET | `/hotels/:id/rooms` | — | — | 200 list of `room` | 422, 404 hotel |
+| POST | `/hotels` | admin | `{ name, city, country, starRating, description?, address?, amenities?, images?, priceFrom? }` | 201 `hotel` | 401, 403, 422 |
+| PATCH | `/hotels/:id` | admin | partial of create body, ≥ 1 field | 200 `hotel` | 401, 403, 422, 404 |
+| DELETE | `/hotels/:id` | admin | — | 200 `{ id }` (cascades rooms) | 401, 403, 404 |
 
-`hotel` summary shape: `{ id, name, city, country, starRating, priceFrom, avgRating, reviewCount, thumbnail }`.
-`hotelDetail` shape: `hotel` summary + `description`, `address`, `amenities`, `images`, `rooms`.
+`hotel` summary shape: `{ id, name, city, country, starRating, amenities, priceFrom, reviewAvg, reviewCount, thumbnail }`.
+`hotelDetail` shape: `hotel` summary + `description`, `address`, `images`, `rooms[]`.
 
 ### 2.4 Rooms (`/rooms`, `/hotels/:id/rooms`)
 | Method | Path | Auth | Query | Success | Errors |
 |--------|------|------|-------|---------|--------|
-| GET | `/hotels/:id/rooms` | — | `checkIn`, `checkOut` (optional; if both present, response includes `available` boolean per room) | 200 list of `room` | 404 hotel |
-| GET | `/rooms/:id` | — | — | 200 `room` | 404 |
+| GET | `/hotels/:id/rooms` | — | (Phase 5: `checkIn`, `checkOut` to populate `available`) | 200 list of `room` | 422, 404 hotel |
+| GET | `/rooms/:id` | — | — | 200 `room` | 404 | _Phase 5_ |
 
-`room` shape: `{ id, hotel, type, capacity, pricePerNight, quantity, amenities, images, available? }`.
+`room` shape: `{ id, hotel, roomType, capacity, pricePerNight, quantity, amenities, images, available? }`.
 
-### 2.5 Reservations (`/reservations`)
+### 2.5 Reservations (`/reservations`) — **shipped in Phase 5**
+All endpoints require `Authorization: Bearer <jwt>`. Users only ever see and act on their own reservations.
+
 | Method | Path | Auth | Body / Query | Success | Errors |
 |--------|------|------|--------------|---------|--------|
-| POST | `/reservations` | user | `{ roomId, checkIn, checkOut, guestCount }` | 201 `reservation` | 422, 404 room, 409 not available |
-| GET | `/reservations` | user | `?status=upcoming\|completed\|cancelled` | 200 list of `reservation` (current user only) | 401 |
+| POST | `/reservations` | user | `{ roomId, checkIn, checkOut, guests }` | 201 `reservation` | 401, 422, 404 room, 409 not available |
+| GET | `/reservations/me` | user | — | 200 list of `reservation` (current user only, sorted by check-in desc) | 401 |
 | GET | `/reservations/:id` | user | — | 200 `reservation` | 401, 403 (not owner), 404 |
-| POST | `/reservations/:id/cancel` | user | — | 200 `reservation` (status=`cancelled`) | 403 (not owner), 409 (already cancelled, completed, or < 24h to check-in) |
+| PATCH | `/reservations/:id/cancel` | user | — | 200 `reservation` (status=`cancelled`, `cancelledAt` set) | 401, 403 (not owner), 404, 409 (already cancelled, or check-in already started) |
 
-`reservation` shape: `{ id, user, hotel: { id, name, city }, room: { id, type, pricePerNight }, checkIn, checkOut, nights, guestCount, totalPrice, status, createdAt }`.
+**Validation (POST):**
+- `roomId` is a 24-char ObjectId (422 otherwise).
+- `checkIn` / `checkOut` ISO date; `checkOut` must be strictly later than `checkIn`.
+- `guests` is an integer ≥ 1; capped at the room's `capacity` server-side (422 with `{ field: 'guests', message: '...' }`).
+- `checkIn` may not be in the past (422 with `{ field: 'checkIn' }`).
+
+**Availability (POST):** the server counts active reservations for `roomId` whose date range overlaps `[checkIn, checkOut)`. Two ranges overlap iff `existing.checkIn < new.checkOut AND existing.checkOut > new.checkIn`. If the count ≥ `room.quantity` → 409 `CONFLICT` with message `"Room is not available for the selected dates"`.
+
+**Price calculation:** `nights = round((checkOut - checkIn) / 1d)`, `totalPrice = nights * room.pricePerNight`. Prices are snapshotted onto the reservation document at create time so subsequent room price changes don't retroactively alter past bookings.
+
+**Cancellation:** allowed only on `status: 'active'` reservations whose `checkIn` is still in the future. Already-cancelled or already-started bookings → 409.
+
+`reservation` shape:
+```json
+{
+  "id": "…",
+  "userId": "…",
+  "status": "active" | "cancelled",
+  "checkIn": "2026-12-01T00:00:00.000Z",
+  "checkOut": "2026-12-05T00:00:00.000Z",
+  "guests": 2,
+  "nights": 4,
+  "totalPrice": 560,
+  "cancelledAt": null,
+  "createdAt": "2026-05-01T…",
+  "hotel": { "id": "…", "name": "…", "city": "…", "country": "…" },
+  "room": { "id": "…", "roomType": "double", "pricePerNight": 140, "capacity": 2 }
+}
+```
 
 ### 2.6 Reviews (`/hotels/:id/reviews`, `/reviews/:id`)
 | Method | Path | Auth | Body / Query | Success | Errors |

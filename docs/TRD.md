@@ -2,11 +2,11 @@
 
 ## 0. Locked Decisions
 - Demo target: **local-only** (frontend dev server + backend dev server + local/Atlas Mongo). No cloud deploy required.
-- Frontend UI library: **shadcn/ui only**. MUI removed.
-- Forms: **react-hook-form + zod only**. Formik / Yup removed.
+- Frontend forms: **Formik + Yup** (rubric-aligned). RHF/Zod removed.
+- Frontend UI framework: **Material-UI v6 + Emotion** end-to-end. Tailwind, shadcn, and Radix have been removed; MUI is the only component library in the runtime.
 - Hotel images: URL string fields populated with placeholder links via the seed script.
 - Reservation completion: computed **lazily on read** (no scheduler).
-- Password-change endpoint (`PATCH /users/me/password`): delivered in **Phase 7** polish.
+- Password-change endpoint (`PATCH /users/me/password`): delivered in **Phase 8** polish.
 - Refresh tokens / httpOnly cookie auth: out of scope.
 
 ## 1. Stack
@@ -14,11 +14,13 @@
 ### Frontend (`/frontend`)
 - React 19 + Vite
 - React Router v7 for routing
-- TailwindCSS v4 + **shadcn/ui only** (Radix primitives, lucide-react). MUI/Emotion are present in `package.json` from the initial scaffold and will be removed in Phase 2 setup.
-- Forms: **react-hook-form + zod only** (with `@hookform/resolvers/zod`). Formik and Yup will be removed in Phase 2.
-- HTTP: axios (single shared `apiClient` with interceptors)
-- State: React context for current user/session; component-local state for everything else (no Redux)
-- ESLint for linting
+- **Material-UI v6 + Emotion** is the only component library. All shells (AppBar/Toolbar/Container), all forms (TextField/Select/Checkbox/Slider/Button), all surfaces (Card/Paper/Dialog/Alert/Skeleton/Pagination/Chip/Rating), and all icons (`@mui/icons-material`) are MUI. MUI is wired via `ThemeProvider` + `CssBaseline` in `app/Providers.jsx`.
+- **Formik + Yup** for form state and validation. Field-level integration via the `FTextField` helper in `lib/formik-mui.jsx`.
+- HTTP: axios (single shared `apiClient` with interceptors).
+- State: React context for current user/session; component-local state for everything else (no Redux).
+- ESLint for linting.
+
+> Tailwind, shadcn, Radix, lucide-react, clsx, class-variance-authority, and tailwind-merge are all uninstalled.
 
 ### Backend (`/backend`)
 - Node.js (ESM) + Express 5

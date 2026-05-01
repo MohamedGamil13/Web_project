@@ -72,17 +72,21 @@
 
 ### Epic E — Reservation
 **E1. Create reservation**
+- *As a* user *I want* to book a room *so that* I have a confirmed stay.
 - AC:
-  - Inputs: roomId, checkIn (date), checkOut (date), guestCount.
-  - Validation: checkOut > checkIn; dates not in the past; guestCount ≤ room capacity.
-  - Server checks room availability across the date range; conflict → HTTP 409.
-  - On success: HTTP 201 with the reservation; user redirected to `/reservations` with a confirmation toast.
+  - Trigger: clicking *Reserve* on a room card on the hotel detail page opens a modal dialog. Unauthenticated users see a "Sign in to reserve" variant of the dialog with a *Sign in* button that preserves `returnTo`.
+  - Inputs: `roomId` (pre-filled from the picked room), `checkIn` (date), `checkOut` (date), `guests`.
+  - Client-side validation (zod): `checkIn` not in the past; `checkOut > checkIn`; `guests` integer ≥ 1.
+  - Live total: while both dates are picked, the dialog shows `nights × pricePerNight = total`; the *Confirm* button shows the running total.
+  - Server-side validation (Joi + service): same as client + `guests ≤ room.capacity` (422 with `{ field: 'guests' }`).
+  - Availability: server rejects with HTTP 409 + message `"Room is not available for the selected dates"` when overlapping active bookings ≥ `room.quantity`. The dialog surfaces the conflict in an inline destructive banner so the user can pick different dates without losing the form.
+  - On success: HTTP 201, the dialog swaps to a confirmation panel showing hotel, room, dates, nights, guests, and total. The user can close the dialog or click *View my reservations* to navigate to `/reservations`.
 
 **E2. List my reservations**
-- AC: `/reservations` shows upcoming and past reservations; each row shows hotel, room, dates, total price, status.
+- AC: `/reservations` calls `GET /reservations/me` and groups results into three sections — *Upcoming*, *Past stays*, *Cancelled*. Each card shows hotel, city/country, room type, check-in → check-out, nights, guest count, total price, and a status badge. Empty state ("No reservations yet") with a *Browse hotels* CTA when the list is empty. Loading skeletons during the fetch; an inline error card with a *Try again* button on failure.
 
 **E3. Cancel reservation**
-- AC: only an `upcoming` reservation can be cancelled; cancellation must be at least 24 hours before check-in (configurable, documented as a constant). Status becomes `cancelled`. Cancelled reservations cannot be re-activated.
+- AC: only *Upcoming* reservations show a *Cancel* button. Clicking opens a `ConfirmDialog` ("Cancel this reservation?") with the reservation summary and destructive-styled *Yes, cancel* / *Keep reservation* buttons. Confirming calls `PATCH /reservations/:id/cancel`; on success the dashboard refetches and the reservation moves to the *Cancelled* section. Status becomes `cancelled` and `cancelledAt` is recorded; cancelled reservations cannot be re-activated. Cancelling someone else's reservation → 403; cancelling an already-cancelled reservation or one whose check-in has passed → 409, surfaced as a destructive banner under the list.
 
 ### Epic F — Reviews
 **F1. Post a review**

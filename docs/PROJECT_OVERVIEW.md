@@ -26,7 +26,10 @@ A hotel booking web application built as an academic group project. End users ca
 
 ## 5. Constraints
 - Team size: 5 (FE: 2, BE: 3). Course-length timeline (~6–8 weeks).
-- Stack is fixed: React 19 + Vite + Tailwind/shadcn (with MUI available) on the FE; Express 5 + Mongoose + JWT on the BE.
+- Rubric-driven constraints override preferences:
+  - Frontend forms should use **Formik**.
+  - Frontend should use a mainstream responsive framework such as **Material-UI or Bootstrap**.
+  - Backend remains Node + Express with JWT auth and bcrypt password hashing.
 - No paid third-party services beyond free tiers.
 - Authentication is JWT (access token only, stored in localStorage for simplicity — documented as an academic trade-off).
 
@@ -43,7 +46,7 @@ A hotel booking web application built as an academic group project. End users ca
 | BE2    | Hotels, rooms, search, filter |
 | BE3    | Reservations, reviews, tests, docs |
 
-## 7. Phases & Milestones
+## 7. Phases & Milestones (Rubric-Aligned)
 | # | Phase | Owner(s) | Exit criteria |
 |---|-------|----------|---------------|
 | 1 | Planning & Design | All | These 5 docs approved; entities + API contract locked |
@@ -51,8 +54,9 @@ A hotel booking web application built as an academic group project. End users ca
 | 3 | Auth & Profile | FE1 + BE1 | Register/login/logout works end-to-end; JWT-protected `/me`; profile view + edit (password change deferred to Phase 7) |
 | 4 | Hotel Search & Filtering | FE2 + BE2 | Search page hits real `/hotels` API with filters + pagination |
 | 5 | Reservations | FE2 + BE3 | User can create + view + cancel reservations against real API |
-| 6 | Reviews & Ratings | FE2 + BE3 | User can post a review for a stayed hotel; average rating shown |
-| 7 | Testing, Docs & Polish | All | API tests green; Swagger published; README finished; **password-change endpoint shipped**; demo run-through |
+| 6 | Rubric Alignment Refactor | FE1 + FE2 | Replace RHF/Zod forms with Formik; introduce Bootstrap or MUI usage in key pages/components; update TRD/README accordingly |
+| 7 | Reviews & Ratings | FE2 + BE3 | User can post a review for a stayed hotel; average rating shown; reviews endpoints mounted and tested |
+| 8 | Testing, Docs & Polish | All | API tests expanded per endpoint; Swagger + API collection published; README finished; **password-change endpoint shipped**; demo run-through |
 
 ## 8. Integration Checkpoints (FE mock → real API handoff)
 - **CP-0 (end of Phase 1):** Backend publishes the OpenAPI sketch in `API_PLAN.md`. Frontend builds an `apiClient` (axios) plus mock fixtures matching the response envelope.

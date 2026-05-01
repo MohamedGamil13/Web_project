@@ -8,8 +8,10 @@ import apiRouter from './routes/index.js';
 const app = express();
 
 applySecurity(app);
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Bumped from the default 1 MB so users can upload an avatar as a base64
+// data URL (resized client-side to ~256×256 JPEG, well under this limit).
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 mountSwagger(app, '/api/docs');
 

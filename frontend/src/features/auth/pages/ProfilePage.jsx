@@ -1,13 +1,30 @@
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRef, useState } from 'react';
+import { Formik, Form } from 'formik';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Container,
+  Divider,
+  Stack,
+  Typography,
+} from '@mui/material';
+import * as yup from 'yup';
+import { FTextField } from '@/lib/formik-mui';
+import { UserAvatar } from '@/components/shared/UserAvatar';
+import { resizeImageToDataUrl } from '@/lib/imageResize';
 import { useAuth } from '@/hooks/useAuth';
-import { updateProfileSchema } from '../schemas';
 import { updateProfile } from '../api';
+
+// Form-only schema (avatar is handled separately via the upload widget).
+const profileFormSchema = yup.object({
+  name: yup.string().trim().min(2, 'Name is too short').max(80).required('Name is required'),
+  email: yup.string().trim().email('Enter a valid email').required('Email is required'),
+  phone: yup.string().trim().max(40).nullable(),
+});
 
 export default function ProfilePage() {
   const { user, setUser, bootstrapping } = useAuth();
@@ -15,175 +32,242 @@ export default function ProfilePage() {
   const [serverError, setServerError] = useState(null);
   const [savedAt, setSavedAt] = useState(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setError,
-    formState: { errors, isSubmitting, isDirty },
-  } = useForm({
-    resolver: zodResolver(updateProfileSchema),
-    defaultValues: {
-      name: user?.name ?? '',
-      email: user?.email ?? '',
-      phone: user?.phone ?? '',
-      avatarUrl: user?.avatarUrl ?? '',
-    },
-  });
-
-  useEffect(() => {
-    if (user) {
-      reset({
-        name: user.name ?? '',
-        email: user.email ?? '',
-        phone: user.phone ?? '',
-        avatarUrl: user.avatarUrl ?? '',
-      });
-    }
-  }, [user, reset]);
-
-  async function onSubmit(values) {
-    setServerError(null);
-    setSavedAt(null);
-    const patch = { ...values };
-    if (!patch.phone) patch.phone = '';
-    if (!patch.avatarUrl) patch.avatarUrl = '';
-    try {
-      const updated = await updateProfile(patch);
-      setUser(updated);
-      reset({
-        name: updated.name ?? '',
-        email: updated.email ?? '',
-        phone: updated.phone ?? '',
-        avatarUrl: updated.avatarUrl ?? '',
-      });
-      setIsEditing(false);
-      setSavedAt(new Date());
-    } catch (err) {
-      if (err?.code === 'CONFLICT') {
-        setError('email', { message: err.message });
-        return;
-      }
-      if (err?.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
-        for (const d of err.details) {
-          if (d.field) setError(d.field, { message: d.message });
-        }
-        return;
-      }
-      setServerError(err?.message ?? 'Could not update profile');
-    }
-  }
-
   if (bootstrapping || !user) {
     return (
-      <div className="mx-auto max-w-xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Loading…</CardDescription>
-          </CardHeader>
-          <CardContent />
+      <Container maxWidth="sm" sx={{ py: 4 }}>
+        <Card variant="outlined">
+          <CardHeader title="Profile" subheader="Loading…" />
         </Card>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <header className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-          <p className="text-sm text-muted-foreground">
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Stack spacing={3}>
+        <Box>
+          <Typography variant="h5" fontWeight={600}>
+            Profile
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             Member since {new Date(user.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-        {!isEditing && (
-          <Button variant="outline" onClick={() => setIsEditing(true)}>
-            Edit
-          </Button>
-        )}
-      </header>
+          </Typography>
+        </Box>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{user.name}</CardTitle>
-          <CardDescription>{user.email}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isEditing ? (
-            <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" {...register('name')} />
-                {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" {...register('email')} />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" type="tel" {...register('phone')} />
-                {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="avatarUrl">Avatar URL</Label>
-                <Input id="avatarUrl" type="url" placeholder="https://…" {...register('avatarUrl')} />
-                {errors.avatarUrl && (
-                  <p className="text-xs text-destructive">{errors.avatarUrl.message}</p>
-                )}
-              </div>
-              {serverError && (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-sm text-destructive">
-                  {serverError}
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isSubmitting || !isDirty}>
-                  {isSubmitting ? 'Saving…' : 'Save changes'}
+        <AvatarCard user={user} setUser={setUser} />
+
+        <Card variant="outlined">
+          <CardHeader
+            title={user.name}
+            subheader={user.email}
+            action={
+              !isEditing && (
+                <Button variant="outlined" size="small" onClick={() => setIsEditing(true)}>
+                  Edit
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={isSubmitting}
-                  onClick={() => {
-                    reset();
+              )
+            }
+          />
+          <Divider />
+          <CardContent>
+            {isEditing ? (
+              <Formik
+                initialValues={{
+                  name: user.name ?? '',
+                  email: user.email ?? '',
+                  phone: user.phone ?? '',
+                }}
+                validationSchema={profileFormSchema}
+                onSubmit={async (values, { setSubmitting, setFieldError, resetForm }) => {
+                  setServerError(null);
+                  setSavedAt(null);
+                  try {
+                    const updated = await updateProfile(values);
+                    setUser(updated);
+                    resetForm({
+                      values: {
+                        name: updated.name ?? '',
+                        email: updated.email ?? '',
+                        phone: updated.phone ?? '',
+                      },
+                    });
                     setIsEditing(false);
-                    setServerError(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <dl className="grid grid-cols-3 gap-y-3 text-sm">
-              <dt className="text-muted-foreground">Phone</dt>
-              <dd className="col-span-2">{user.phone || <span className="text-muted-foreground">—</span>}</dd>
-              <dt className="text-muted-foreground">Avatar</dt>
-              <dd className="col-span-2 break-all">
-                {user.avatarUrl || <span className="text-muted-foreground">—</span>}
-              </dd>
-              <dt className="text-muted-foreground">Role</dt>
-              <dd className="col-span-2">{user.role}</dd>
-            </dl>
-          )}
-          {savedAt && !isEditing && (
-            <p className="mt-4 text-xs text-muted-foreground">
-              Saved {savedAt.toLocaleTimeString()}.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                    setSavedAt(new Date());
+                  } catch (err) {
+                    if (err?.code === 'CONFLICT') {
+                      setFieldError('email', err.message);
+                    } else if (err?.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
+                      for (const d of err.details) {
+                        if (d.field) setFieldError(d.field, d.message);
+                      }
+                    } else {
+                      setServerError(err?.message ?? 'Could not update profile');
+                    }
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+              >
+                {({ isSubmitting, dirty, resetForm }) => (
+                  <Form noValidate>
+                    <Stack spacing={2.5}>
+                      <FTextField name="name" label="Name" />
+                      <FTextField name="email" label="Email" type="email" />
+                      <FTextField name="phone" label="Phone" type="tel" />
+                      {serverError && <Alert severity="error">{serverError}</Alert>}
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          disabled={isSubmitting || !dirty}
+                        >
+                          {isSubmitting ? 'Saving…' : 'Save changes'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="text"
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            resetForm();
+                            setIsEditing(false);
+                            setServerError(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </Form>
+                )}
+              </Formik>
+            ) : (
+              <Stack spacing={1.5}>
+                <DetailRow label="Phone" value={user.phone || '—'} />
+                <DetailRow label="Role" value={user.role} />
+                {savedAt && (
+                  <Typography variant="caption" color="text.secondary">
+                    Saved {savedAt.toLocaleTimeString()}.
+                  </Typography>
+                )}
+              </Stack>
+            )}
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Password</CardTitle>
-          <CardDescription>Change-password ships in Phase 7.</CardDescription>
-        </CardHeader>
-        <CardContent />
-      </Card>
-    </div>
+        <Card variant="outlined">
+          <CardHeader
+            title="Password"
+            subheader="Change-password ships in Phase 8."
+            titleTypographyProps={{ variant: 'subtitle1' }}
+          />
+        </Card>
+      </Stack>
+    </Container>
+  );
+}
+
+function AvatarCard({ user, setUser }) {
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleFile(file) {
+    if (!file) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, 256, 0.85);
+      const updated = await updateProfile({ avatarUrl: dataUrl });
+      setUser(updated);
+    } catch (err) {
+      setError(err?.message ?? 'Could not upload avatar');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleRemove() {
+    setError(null);
+    setUploading(true);
+    try {
+      const updated = await updateProfile({ avatarUrl: '' });
+      setUser(updated);
+    } catch (err) {
+      setError(err?.message ?? 'Could not remove avatar');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Card variant="outlined">
+      <CardContent>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2.5}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+        >
+          <UserAvatar user={user} size={80} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              Profile photo
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              {user.avatarUrl
+                ? 'Replace or remove your current photo.'
+                : 'Showing your initials. Upload an image to personalize.'}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button
+                variant="contained"
+                size="small"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? 'Working…' : user.avatarUrl ? 'Change photo' : 'Upload photo'}
+              </Button>
+              {user.avatarUrl && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  disabled={uploading}
+                  onClick={handleRemove}
+                >
+                  Remove
+                </Button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = ''; // allow re-uploading the same file
+                  handleFile(file);
+                }}
+              />
+            </Stack>
+            {error && (
+              <Alert severity="error" sx={{ mt: 1.5 }}>
+                {error}
+              </Alert>
+            )}
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 2, alignItems: 'baseline' }}>
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2">{value}</Typography>
+    </Box>
   );
 }

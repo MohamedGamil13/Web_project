@@ -1,7 +1,12 @@
 import { apiClient, unwrap } from '@/lib/apiClient';
 
-export async function listMyReservations(params) {
-  const res = await apiClient.get('/reservations', { params });
+export async function listMyReservations() {
+  const res = await apiClient.get('/reservations/me');
+  return unwrap(res) ?? [];
+}
+
+export async function getReservation(id) {
+  const res = await apiClient.get(`/reservations/${id}`);
   return unwrap(res);
 }
 
@@ -11,6 +16,6 @@ export async function createReservation(payload) {
 }
 
 export async function cancelReservation(id) {
-  const res = await apiClient.post(`/reservations/${id}/cancel`);
+  const res = await apiClient.patch(`/reservations/${id}/cancel`);
   return unwrap(res);
 }

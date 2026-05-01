@@ -46,18 +46,18 @@ User (1) ────< Reservation >──── (1) Room ────(N..1)─�
 | `amenities` | [String] | e.g. `wifi`, `pool`, `parking`, `breakfast`, `gym` |
 | `images` | [String] | URLs; seeded with placeholder links (e.g. `https://picsum.photos/...`) |
 | `priceFrom` | Number | denormalized minimum room price for sorting/listing |
-| `avgRating` | Number, default 0 | computed from reviews |
+| `reviewAvg` | Number, default 0 | computed from reviews (renamed from `avgRating` in Phase 4 to match `reviewCount`) |
 | `reviewCount` | Number, default 0 | computed |
 | `createdAt`/`updatedAt` | Date | auto |
 
-**Indexes:** `{ city: 1 }`, `{ priceFrom: 1 }`, `{ avgRating: -1 }`, text index on `{ name, city, description }` for keyword search.
+**Indexes:** `{ city: 1 }`, `{ priceFrom: 1 }`, `{ reviewAvg: -1 }`, text index on `{ name, city, description }` for keyword search.
 
 ### 2.3 `rooms`
 | Field | Type | Notes |
 |-------|------|-------|
 | `_id` | ObjectId | PK |
 | `hotel` | ObjectId ref `Hotel`, required, indexed | |
-| `type` | String enum: `single` \| `double` \| `suite` \| `family` | |
+| `roomType` | String enum: `single` \| `double` \| `suite` \| `family` | renamed from `type` in Phase 4 to avoid the JS reserved-ish word |
 | `capacity` | Number, required, 1–8 | |
 | `pricePerNight` | Number, required, ≥ 0 | |
 | `quantity` | Number, default 1 | how many physical rooms of this type the hotel has |
@@ -73,25 +73,25 @@ User (1) ────< Reservation >──── (1) Room ────(N..1)─�
 | Field | Type | Notes |
 |-------|------|-------|
 | `_id` | ObjectId | PK |
-| `user` | ObjectId ref `User`, required, indexed | |
-| `room` | ObjectId ref `Room`, required, indexed | |
-| `hotel` | ObjectId ref `Hotel`, required, indexed | denormalized for list/lookup |
+| `userId` | ObjectId ref `User`, required, indexed | |
+| `roomId` | ObjectId ref `Room`, required, indexed | |
+| `hotelId` | ObjectId ref `Hotel`, required, indexed | denormalized for list/lookup |
 | `checkIn` | Date, required | inclusive |
 | `checkOut` | Date, required | exclusive; must be `> checkIn` |
-| `guestCount` | Number, required, ≥ 1 | |
+| `guests` | Number, required, 1–16 | capped server-side at `room.capacity` |
 | `nights` | Number | computed = `(checkOut - checkIn) / 1d` |
 | `totalPrice` | Number | `nights * room.pricePerNight` (snapshot at create) |
-| `status` | String enum: `upcoming` \| `completed` \| `cancelled`, default `upcoming` | |
-| `cancelledAt` | Date | optional |
+| `status` | String enum: `active` \| `cancelled`, default `active` | renamed from the previous `upcoming/completed/cancelled` plan; "past" stays are derived from dates on the client |
+| `cancelledAt` | Date | optional, set when `status` flips to `cancelled` |
 | `createdAt`/`updatedAt` | Date | auto |
 
-**Indexes:** `{ user: 1, status: 1, checkIn: -1 }`, `{ room: 1, checkIn: 1, checkOut: 1 }` (used by the availability check).
+**Indexes:** `{ userId: 1, checkIn: -1 }`, `{ roomId: 1, status: 1, checkIn: 1, checkOut: 1 }` (used by the availability check).
 
 **Status transitions:**
-- `upcoming` → `cancelled` (user, ≥ 24h before `checkIn`)
-- `upcoming` → `completed` — **computed lazily on read** (server-side): on every reservation read, if `status = upcoming` and `now >= checkOut`, the document is updated to `completed` before being returned. No scheduler.
+- `active` → `cancelled` — user-triggered via `PATCH /reservations/:id/cancel`. Allowed only while `checkIn > now`.
+- There is no `completed` state — past reservations remain `active`; the UI shows them under "Past stays" by comparing `checkOut` to now.
 
-**Availability rule:** a new reservation `R` is allowed only if, for the same `room`, the count of reservations with `status = upcoming` whose date range `[checkIn, checkOut)` overlaps `[R.checkIn, R.checkOut)` is `< room.quantity`. Two ranges overlap iff `existing.checkIn < R.checkOut AND existing.checkOut > R.checkIn`.
+**Availability rule:** a new reservation `R` is allowed only if, for the same `roomId`, the count of reservations with `status = active` whose date range `[checkIn, checkOut)` overlaps `[R.checkIn, R.checkOut)` is `< room.quantity`. Two ranges overlap iff `existing.checkIn < R.checkOut AND existing.checkOut > R.checkIn`.
 
 ### 2.5 `reviews`
 | Field | Type | Notes |

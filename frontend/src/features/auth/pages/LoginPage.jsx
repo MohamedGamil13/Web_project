@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { Formik, Form } from 'formik';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Alert,
+  Button,
+  Container,
+  Link as MuiLink,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { FTextField } from '@/lib/formik-mui';
 import { useAuth } from '@/hooks/useAuth';
 import { loginSchema } from '../schemas';
 import { login as loginApi } from '../api';
@@ -17,59 +22,59 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState(null);
   const returnTo = params.get('returnTo') ?? '/';
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
-
-  async function onSubmit(values) {
-    setServerError(null);
-    try {
-      const { user, token } = await loginApi(values);
-      login(user, token);
-      navigate(decodeURIComponent(returnTo), { replace: true });
-    } catch (err) {
-      setServerError(err?.message ?? 'Login failed');
-    }
-  }
-
   return (
-    <div className="mx-auto max-w-sm">
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Sign in to manage your reservations.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" autoComplete="email" {...register('email')} />
-              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
-              {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
-            </div>
-            {serverError && (
-              <p className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-sm text-destructive">
-                {serverError}
-              </p>
-            )}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              No account?{' '}
-              <Link to="/register" className="text-foreground underline">
-                Create one
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
+      <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, borderRadius: 2 }}>
+        <Stack spacing={1} mb={3}>
+          <Typography variant="h5" fontWeight={600}>
+            Welcome back
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Sign in to manage your reservations.
+          </Typography>
+        </Stack>
+
+        <Formik
+          initialValues={{ email: '', password: '' }}
+          validationSchema={loginSchema}
+          onSubmit={async (values, { setSubmitting }) => {
+            setServerError(null);
+            try {
+              const { user, token } = await loginApi(values);
+              login(user, token);
+              navigate(decodeURIComponent(returnTo), { replace: true });
+            } catch (err) {
+              setServerError(err?.message ?? 'Login failed');
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+        >
+          {({ isSubmitting }) => (
+            <Form noValidate>
+              <Stack spacing={2.5}>
+                <FTextField name="email" label="Email" type="email" autoComplete="email" />
+                <FTextField
+                  name="password"
+                  label="Password"
+                  type="password"
+                  autoComplete="current-password"
+                />
+                {serverError && <Alert severity="error">{serverError}</Alert>}
+                <Button type="submit" variant="contained" disabled={isSubmitting}>
+                  {isSubmitting ? 'Signing in…' : 'Sign in'}
+                </Button>
+                <Typography variant="body2" textAlign="center" color="text.secondary">
+                  No account?{' '}
+                  <MuiLink component={Link} to="/register" underline="hover">
+                    Create one
+                  </MuiLink>
+                </Typography>
+              </Stack>
+            </Form>
+          )}
+        </Formik>
+      </Paper>
+    </Container>
   );
 }

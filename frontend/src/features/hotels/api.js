@@ -1,11 +1,16 @@
-import { apiClient, unwrap } from '@/lib/apiClient';
+import { apiClient } from '@/lib/apiClient';
 
 export async function listHotels(params) {
   const res = await apiClient.get('/hotels', { params });
-  return { items: unwrap(res), meta: res.data?.meta };
+  return { items: res.data?.data ?? [], meta: res.data?.meta ?? { page: 1, pageSize: 10, total: 0 } };
 }
 
 export async function getHotel(id) {
   const res = await apiClient.get(`/hotels/${id}`);
-  return unwrap(res);
+  return res.data?.data;
+}
+
+export async function listHotelRooms(id) {
+  const res = await apiClient.get(`/hotels/${id}/rooms`);
+  return res.data?.data ?? [];
 }
