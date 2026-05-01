@@ -15,8 +15,21 @@ export const registerSchema = z
       .regex(/[A-Za-z]/, 'Must contain a letter')
       .regex(/[0-9]/, 'Must contain a number'),
     confirmPassword: z.string(),
+    phone: z.string().trim().max(40).optional().or(z.literal('')),
   })
   .refine((d) => d.password === d.confirmPassword, {
     path: ['confirmPassword'],
     message: 'Passwords do not match',
   });
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, 'Name is too short').max(80),
+  email: z.string().email('Enter a valid email'),
+  phone: z.string().trim().max(40).optional().or(z.literal('')),
+  avatarUrl: z
+    .string()
+    .trim()
+    .url('Must be a valid URL')
+    .optional()
+    .or(z.literal('')),
+});

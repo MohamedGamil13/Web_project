@@ -1,12 +1,17 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function HomePage() {
+  const { isAuthenticated, user } = useAuth();
+
   return (
     <div className="space-y-8">
       <section className="space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">Find your next stay</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {isAuthenticated ? `Welcome back, ${user?.name?.split(' ')[0] ?? ''}` : 'Find your next stay'}
+        </h1>
         <p className="max-w-2xl text-muted-foreground">
           Browse hotels, check availability, and book a room. This is the academic project shell — pages
           are wired but the data layer is mocked until each backend module ships.
@@ -15,9 +20,15 @@ export default function HomePage() {
           <Button asChild>
             <Link to="/hotels">Browse hotels</Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link to="/register">Create an account</Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button asChild variant="outline">
+              <Link to="/reservations">My reservations</Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link to="/register">Create an account</Link>
+            </Button>
+          )}
         </div>
       </section>
 

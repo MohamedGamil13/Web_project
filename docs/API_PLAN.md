@@ -25,21 +25,27 @@ All responses follow the envelope defined in `TRD.md` §3. Authenticated endpoin
 
 ## 2. Endpoints
 
-### 2.1 Auth (`/auth`)
+### 2.1 Auth (`/auth`) — **shipped in Phase 3**
 | Method | Path | Auth | Body | Success | Errors |
 |--------|------|------|------|---------|--------|
-| POST | `/auth/register` | — | `{ name, email, password }` | 201 `{ user, token }` | 422 validation, 409 email taken |
+| POST | `/auth/register` | — | `{ name, email, password, phone? }` | 201 `{ user, token }` | 422 validation, 409 email taken |
 | POST | `/auth/login` | — | `{ email, password }` | 200 `{ user, token }` | 422 validation, 401 bad credentials |
-| POST | `/auth/logout` | user | — | 200 `{ ok: true }` | (server-side no-op; client clears token) |
+| GET | `/auth/me` | user | — | 200 `user` | 401 |
+| POST | `/auth/logout` | user | — | 200 `{ ok: true }` | (stateless: client clears token) |
 
-`user` shape returned: `{ id, name, email, role, createdAt }`. `passwordHash` is never returned.
+`user` shape returned: `{ id, name, email, role, phone?, avatarUrl?, createdAt, updatedAt }`. `passwordHash` is never returned.
 
-### 2.2 Users (`/users`)
+Login error message: `"Invalid email or password"` is used for both an unknown email and a wrong password (no field-level enumeration).
+Register conflict: 409 `CONFLICT` with `error.message = "An account with that email already exists"`.
+
+### 2.2 Users (`/users`) — **shipped in Phase 3**
 | Method | Path | Auth | Body | Success | Errors |
 |--------|------|------|------|---------|--------|
 | GET | `/users/me` | user | — | 200 `user` | 401 |
-| PATCH | `/users/me` | user | `{ name?, email? }` | 200 `user` | 422, 409 email taken |
+| PATCH | `/users/me` | user | `{ name?, email?, phone?, avatarUrl? }` (≥ 1 field) | 200 `user` | 422 validation, 409 email taken |
 | PATCH | `/users/me/password` | user | `{ currentPassword, newPassword }` | 200 `{ ok: true }` | 401 wrong current, 422 | _Phase 7_ |
+
+Empty `phone` / `avatarUrl` strings clear the field. Email change re-checks uniqueness.
 
 ### 2.3 Hotels (`/hotels`)
 | Method | Path | Auth | Query | Success | Errors |
