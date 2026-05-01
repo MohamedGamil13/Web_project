@@ -57,8 +57,12 @@ export function Navbar() {
   const [accountAnchor, setAccountAnchor] = useState(null);
   const accountOpen = Boolean(accountAnchor);
 
+  const adminLinks =
+    user?.role === "admin"
+      ? [{ to: "/admin/reservations", label: "Reservations" }]
+      : [];
   const allLinks = isAuthenticated
-    ? [...PUBLIC_LINKS, ...AUTHED_LINKS]
+    ? [...PUBLIC_LINKS, ...AUTHED_LINKS, ...adminLinks]
     : PUBLIC_LINKS;
 
   function closeAccount() {
@@ -175,6 +179,15 @@ export function Navbar() {
                   >
                     My reservations
                   </MenuItem>
+                  {user?.role === "admin" && (
+                    <MenuItem
+                      component={RouterLink}
+                      to="/admin/reservations"
+                      onClick={closeAccount}
+                    >
+                      Reservations
+                    </MenuItem>
+                  )}
                   <Divider />
                   <MenuItem onClick={handleLogout}>Logout</MenuItem>
                 </Menu>

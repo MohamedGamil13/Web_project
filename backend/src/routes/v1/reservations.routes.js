@@ -4,12 +4,16 @@ import {
   listMine,
   getOne,
   cancel,
+  listAdmin,
+  updateAdmin,
 } from "../../controllers/reservations.controller.js";
 import { validate } from "../../middleware/validate.js";
-import { requireAuth } from "../../middleware/auth.js";
+import { requireAuth, requireRole } from "../../middleware/auth.js";
 import {
   createReservationSchema,
+  listAdminReservationsQuerySchema,
   reservationIdParam,
+  updateReservationSchema,
 } from "../../validators/reservations.validators.js";
 
 const router = Router();
@@ -64,6 +68,12 @@ router.post("/", validate(createReservationSchema), create);
  *         description: Reservations list
  */
 router.get("/me", listMine);
+router.get(
+  "/manage",
+  requireRole("admin"),
+  validate(listAdminReservationsQuerySchema, "query"),
+  listAdmin,
+);
 
 /**
  * @openapi
@@ -80,6 +90,13 @@ router.get("/me", listMine);
  *         schema: { type: string }
  */
 router.get("/:id", validate(reservationIdParam, "params"), getOne);
+router.patch(
+  "/:id",
+  requireRole("admin"),
+  validate(reservationIdParam, "params"),
+  validate(updateReservationSchema),
+  updateAdmin,
+);
 
 /**
  * @openapi

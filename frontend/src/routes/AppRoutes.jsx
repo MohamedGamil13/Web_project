@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { Layout } from "@/components/shared/Layout";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute";
+import { AdminRoute } from "@/routes/AdminRoute";
 
 import NotFoundPage from "@/app/NotFoundPage";
 
@@ -12,9 +13,11 @@ import ChangePasswordPage from "@/features/auth/pages/ChangePasswordPage";
 
 import HotelsListPage from "@/features/hotels/pages/HotelsListPage";
 import HotelDetailsPage from "@/features/hotels/pages/HotelDetailsPage";
+import HotelFormPage from "@/features/hotels/pages/HotelFormPage";
 
 import ReservationsPage from "@/features/reservations/pages/ReservationsPage";
 import ReservationsHistoryPage from "@/features/reservations/pages/ReservationsHistoryPage";
+import AdminReservationsPage from "@/features/reservations/pages/AdminReservationsPage";
 
 export function AppRoutes() {
   return (
@@ -38,6 +41,17 @@ export function AppRoutes() {
             path="reservations/history"
             element={<ReservationsHistoryPage />}
           />
+        </Route>
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AdminRoute />}>
+            <Route path="hotels/new" element={<HotelFormPage />} />
+            <Route path="hotels/:id/edit" element={<HotelFormPage />} />
+            <Route
+              path="admin/reservations"
+              element={<AdminReservationsPage />}
+            />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

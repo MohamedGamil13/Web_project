@@ -6,6 +6,7 @@ import {
   createHotel,
   updateHotel,
   deleteHotel,
+  createRoom,
 } from "../../controllers/hotels.controller.js";
 import {
   listForHotel as listReviewsForHotel,
@@ -19,6 +20,7 @@ import {
   objectIdParam,
   createHotelSchema,
   updateHotelSchema,
+  createRoomSchema,
 } from "../../validators/hotels.validators.js";
 import {
   createReviewSchema,
@@ -118,6 +120,14 @@ router.get("/:id", validate(objectIdParam, "params"), getHotel);
  *         description: Rooms list
  */
 router.get("/:id/rooms", validate(objectIdParam, "params"), listHotelRooms);
+router.post(
+  "/:id/rooms",
+  requireAuth,
+  requireRole("admin"),
+  validate(objectIdParam, "params"),
+  validate(createRoomSchema),
+  createRoom,
+);
 
 /**
  * @openapi

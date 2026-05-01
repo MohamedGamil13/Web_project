@@ -18,3 +18,37 @@ export const createReservationSchema = Joi.object({
 export const reservationIdParam = Joi.object({
   id: objectId.required(),
 });
+
+export const updateReservationSchema = Joi.object({
+  checkIn: Joi.date().iso(),
+  checkOut: Joi.date().iso(),
+  guests: Joi.number().integer().min(1).max(16),
+})
+  .min(1)
+  .custom((value, helpers) => {
+    if (value.checkIn && value.checkOut) {
+      const inDate = new Date(value.checkIn);
+      const outDate = new Date(value.checkOut);
+      if (outDate <= inDate) {
+        return helpers.error("date.order");
+      }
+    }
+    return value;
+  })
+  .messages({
+    "date.order": '"checkOut" must be later than "checkIn"',
+  });
+
+export const listAdminReservationsQuerySchema = Joi.object({
+  status: Joi.string().valid("active", "cancelled"),
+  minRoomPrice: Joi.number().min(0),
+  maxRoomPrice: Joi.number()
+    .min(0)
+    .when("minRoomPrice", {
+      is: Joi.number().exist(),
+      then: Joi.number().min(Joi.ref("minRoomPrice")),
+    }),
+  minHotelRating: Joi.number().min(0).max(5),
+  page: Joi.number().integer().min(1).default(1),
+  pageSize: Joi.number().integer().min(1).max(50).default(10),
+});

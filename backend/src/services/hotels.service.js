@@ -27,6 +27,15 @@ function summarize(hotelDoc) {
   };
 }
 
+async function syncHotelPriceFrom(hotelId) {
+  const minRoom = await Room.findOne({ hotel: hotelId })
+    .sort({ pricePerNight: 1 })
+    .select("pricePerNight")
+    .lean();
+  const priceFrom = minRoom ? minRoom.pricePerNight : 0;
+  await Hotel.findByIdAndUpdate(hotelId, { priceFrom });
+}
+
 export async function listHotels(query) {
   const {
     q,
@@ -135,4 +144,36 @@ export async function listRoomsForHotel(hotelId) {
     amenities: r.amenities ?? [],
     images: r.images ?? [],
   }));
+}
+
+export async function getRoomById(id) {
+  const room = await Room.findById(id);
+  if (!room) throw ApiError.notFound("Room not found");
+  return room.toJSON();
+}
+
+export async function createRoomForHotel(hotelId, payload) {
+  const hotel = await Hotel.findById(hotelId).select("_id").lean();
+  if (!hotel) throw ApiError.notFound("Hotel not found");
+
+  const room = await Room.create({ ...payload, hotel: hotelId });
+  await syncHotelPriceFrom(hotelId);
+  return room.toJSON();
+}
+
+export async function updateRoom(id, patch) {
+  const room = await Room.findByIdAndUpdate(id, patch, {
+    new: true,
+    runValidators: true,
+  });
+  if (!room) throw ApiError.notFound("Room not found");
+  await syncHotelPriceFrom(room.hotel);
+  return room.toJSON();
+}
+
+export async function deleteRoom(id) {
+  const room = await Room.findByIdAndDelete(id);
+  if (!room) throw ApiError.notFound("Room not found");
+  await syncHotelPriceFrom(room.hotel);
+  return { id };
 }

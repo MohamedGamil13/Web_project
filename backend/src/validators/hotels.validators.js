@@ -66,3 +66,21 @@ export const updateHotelSchema = Joi.object({
   images: Joi.array().items(Joi.string().uri()),
   priceFrom: Joi.number().min(0),
 }).min(1);
+
+export const createRoomSchema = Joi.object({
+  roomType: Joi.string().valid("single", "double", "suite", "family").required(),
+  capacity: Joi.number().integer().min(1).max(8).required(),
+  pricePerNight: Joi.number().min(0).required(),
+  quantity: Joi.number().integer().min(1).default(1),
+  amenities: Joi.array().items(Joi.string().trim().lowercase()).default([]),
+  images: Joi.array().items(Joi.string().uri()).default([]),
+});
+
+export const updateRoomSchema = Joi.object({
+  roomType: Joi.string().valid("single", "double", "suite", "family"),
+  capacity: Joi.number().integer().min(1).max(8),
+  pricePerNight: Joi.number().min(0),
+  quantity: Joi.number().integer().min(1),
+  amenities: Joi.array().items(Joi.string().trim().lowercase()),
+  images: Joi.array().items(Joi.string().uri()),
+}).min(1);

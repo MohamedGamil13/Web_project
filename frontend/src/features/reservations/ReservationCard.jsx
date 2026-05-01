@@ -27,7 +27,12 @@ function fmtDate(d) {
   });
 }
 
-export function ReservationCard({ reservation, onCancel, cancellable }) {
+export function ReservationCard({
+  reservation,
+  onCancel,
+  cancellable,
+  actions = null,
+}) {
   const { hotel, room, checkIn, checkOut, nights, guests, totalPrice, status } =
     reservation;
   const isPastStay = status === "active" && new Date(checkOut) <= new Date();
@@ -106,16 +111,19 @@ export function ReservationCard({ reservation, onCancel, cancellable }) {
             ${totalPrice}
           </Box>
         </Typography>
-        {cancellable && (
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-        )}
+        <Stack direction="row" spacing={1}>
+          {actions}
+          {cancellable && (
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          )}
+        </Stack>
       </CardActions>
     </Card>
   );

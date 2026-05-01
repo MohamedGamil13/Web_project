@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useAuth } from "@/hooks/useAuth";
 import { HotelCard } from "../HotelCard";
 import { HotelFilters } from "../HotelFilters";
 import {
@@ -27,6 +28,7 @@ import {
 import { listHotels } from "../api";
 
 export default function HotelsListPage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = readFilters(searchParams);
   const [state, setState] = useState({
@@ -132,15 +134,31 @@ export default function HotelsListPage() {
           <Box component="section">
             <Stack spacing={2}>
               <Box sx={{ minHeight: 22 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {state.status === "error"
-                    ? "Could not load hotels"
-                    : isPending
-                      ? "Updating…"
-                      : showSkeletons
-                        ? "Searching…"
-                        : `${total} hotel${total === 1 ? "" : "s"}`}
-                </Typography>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1}
+                  sx={{ justifyContent: "space-between", alignItems: "center" }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {state.status === "error"
+                      ? "Could not load hotels"
+                      : isPending
+                        ? "Updating…"
+                        : showSkeletons
+                          ? "Searching…"
+                          : `${total} hotel${total === 1 ? "" : "s"}`}
+                  </Typography>
+                  {user?.role === "admin" && (
+                    <Button
+                      component={RouterLink}
+                      to="/hotels/new"
+                      variant="contained"
+                      size="small"
+                    >
+                      Create hotel
+                    </Button>
+                  )}
+                </Stack>
               </Box>
 
               {showSkeletons && (

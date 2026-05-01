@@ -10,16 +10,24 @@ import {
   Chip,
   Container,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Rating,
   Skeleton,
   Stack,
+  TextField,
   Typography,
+  MenuItem,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import EditIcon from "@mui/icons-material/Edit";
 import { ReserveDialog } from "@/features/reservations/ReserveDialog";
 import { ReviewsSection } from "@/features/reviews/ReviewsSection";
-import { getHotel } from "../api";
+import { useAuth } from "@/hooks/useAuth";
+import { createRoom, deleteRoom, getHotel, updateRoom } from "../api";
 
 const ROOM_LABEL = {
   single: "Single room",
@@ -124,7 +132,77 @@ export default function HotelDetailsPage() {
 }
 
 function HotelView({ hotel, onReviewsChanged }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [pickedRoom, setPickedRoom] = useState(null);
+  const [roomFormOpen, setRoomFormOpen] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState("");
+  const [roomError, setRoomError] = useState(null);
+  const [savingRoom, setSavingRoom] = useState(false);
+  const [roomForm, setRoomForm] = useState({
+    roomType: "single",
+    capacity: 1,
+    pricePerNight: 100,
+    quantity: 1,
+    amenities: "",
+    images: "",
+  });
+
+  function csvToArray(csv) {
+    return String(csv || "")
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+
+  function sanitizeUrl(url) {
+    try {
+      const raw = String(url || "").trim();
+      if (!raw) return raw;
+      return encodeURI(raw);
+    } catch {
+      return String(url || "").trim();
+    }
+  }
+
+  function csvToUrlArray(csv) {
+    return csvToArray(csv).map(sanitizeUrl);
+  }
+
+  function toRoomForm(room) {
+    return {
+      roomType: room.roomType || "single",
+      capacity: room.capacity ?? 1,
+      pricePerNight: room.pricePerNight ?? 100,
+      quantity: room.quantity ?? 1,
+      amenities: Array.isArray(room.amenities) ? room.amenities.join(", ") : "",
+      images: Array.isArray(room.images) ? room.images.join(", ") : "",
+    };
+  }
+
+  async function submitRoom() {
+    setSavingRoom(true);
+    setRoomError(null);
+    try {
+      const payload = {
+        roomType: roomForm.roomType,
+        capacity: Number(roomForm.capacity),
+        pricePerNight: Number(roomForm.pricePerNight),
+        quantity: Number(roomForm.quantity),
+        amenities: csvToArray(roomForm.amenities),
+        images: csvToUrlArray(roomForm.images),
+      };
+      if (editingRoomId) await updateRoom(editingRoomId, payload);
+      else await createRoom(hotel.id, payload);
+      setRoomFormOpen(false);
+      setEditingRoomId("");
+      await onReviewsChanged();
+    } catch (err) {
+      setRoomError(err?.message || "Could not save room");
+    } finally {
+      setSavingRoom(false);
+    }
+  }
 
   return (
     <Stack spacing={4}>
@@ -237,9 +315,45 @@ function HotelView({ hotel, onReviewsChanged }) {
       )}
 
       <Box>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          Rooms
-        </Typography>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: "center", justifyContent: "space-between", mb: 1 }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            Rooms
+          </Typography>
+          {isAdmin && (
+            <Stack direction="row" spacing={1}>
+              <Button
+                component={RouterLink}
+                to={`/hotels/${hotel.id}/edit`}
+                size="small"
+                startIcon={<EditIcon />}
+              >
+                Edit hotel
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => {
+                  setEditingRoomId("");
+                  setRoomForm({
+                    roomType: "single",
+                    capacity: 1,
+                    pricePerNight: 100,
+                    quantity: 1,
+                    amenities: "",
+                    images: "",
+                  });
+                  setRoomFormOpen(true);
+                }}
+              >
+                Add room
+              </Button>
+            </Stack>
+          )}
+        </Stack>
         {hotel.rooms?.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             No rooms have been added yet.
@@ -271,22 +385,61 @@ function HotelView({ hotel, onReviewsChanged }) {
                 <CardActions
                   sx={{ justifyContent: "space-between", px: 2, pb: 2 }}
                 >
-                  <Typography variant="body2">
-                    <Box component="span" fontWeight={600}>
-                      ${room.pricePerNight}
-                    </Box>
-                    <Box component="span" color="text.secondary">
-                      {" "}
-                      / night
-                    </Box>
-                  </Typography>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    onClick={() => setPickedRoom(room)}
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ width: "100%", justifyContent: "space-between" }}
                   >
-                    Reserve
-                  </Button>
+                    <Typography variant="body2">
+                      <Box component="span" fontWeight={600}>
+                        ${room.pricePerNight}
+                      </Box>
+                      <Box component="span" color="text.secondary">
+                        {" "}
+                        / night
+                      </Box>
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      {isAdmin && (
+                        <>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                              setEditingRoomId(room.id);
+                              setRoomForm(toRoomForm(room));
+                              setRoomFormOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            onClick={async () => {
+                              try {
+                                setRoomError(null);
+                                await deleteRoom(room.id);
+                                await onReviewsChanged();
+                              } catch (err) {
+                                setRoomError(err?.message || "Could not delete room");
+                              }
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => setPickedRoom(room)}
+                      >
+                        Reserve
+                      </Button>
+                    </Stack>
+                  </Stack>
                 </CardActions>
               </Card>
             ))}
@@ -302,6 +455,99 @@ function HotelView({ hotel, onReviewsChanged }) {
         hotel={hotel}
         room={pickedRoom}
       />
+
+      <Dialog
+        open={isAdmin && roomFormOpen}
+        onClose={() => {
+          if (savingRoom) return;
+          setRoomFormOpen(false);
+          setEditingRoomId("");
+        }}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>{editingRoomId ? "Edit room" : "Add room"}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1} sx={{ mt: 1 }}>
+            {roomError && <Alert severity="error">{roomError}</Alert>}
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <TextField
+                select
+                label="Type"
+                value={roomForm.roomType}
+                onChange={(e) =>
+                  setRoomForm((s) => ({ ...s, roomType: e.target.value }))
+                }
+                sx={{ minWidth: 180 }}
+              >
+                {Object.keys(ROOM_LABEL).map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                label="Capacity"
+                type="number"
+                value={roomForm.capacity}
+                onChange={(e) =>
+                  setRoomForm((s) => ({ ...s, capacity: Number(e.target.value) }))
+                }
+              />
+              <TextField
+                label="Price / night"
+                type="number"
+                value={roomForm.pricePerNight}
+                onChange={(e) =>
+                  setRoomForm((s) => ({
+                    ...s,
+                    pricePerNight: Number(e.target.value),
+                  }))
+                }
+              />
+              <TextField
+                label="Quantity"
+                type="number"
+                value={roomForm.quantity}
+                onChange={(e) =>
+                  setRoomForm((s) => ({ ...s, quantity: Number(e.target.value) }))
+                }
+              />
+            </Stack>
+            <TextField
+              label="Amenities (comma separated)"
+              value={roomForm.amenities}
+              onChange={(e) =>
+                setRoomForm((s) => ({ ...s, amenities: e.target.value }))
+              }
+              fullWidth
+            />
+            <TextField
+              label="Image URLs (comma separated)"
+              value={roomForm.images}
+              onChange={(e) =>
+                setRoomForm((s) => ({ ...s, images: e.target.value }))
+              }
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="text"
+            onClick={() => {
+              setRoomFormOpen(false);
+              setEditingRoomId("");
+            }}
+            disabled={savingRoom}
+          >
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={submitRoom} disabled={savingRoom}>
+            {editingRoomId ? "Save room" : "Create room"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

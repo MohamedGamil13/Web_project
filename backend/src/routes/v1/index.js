@@ -3,6 +3,7 @@ import healthRoutes from "./health.routes.js";
 import authRoutes from "./auth.routes.js";
 import usersRoutes from "./users.routes.js";
 import hotelsRoutes from "./hotels.routes.js";
+import roomsRoutes from "./rooms.routes.js";
 import reservationsRoutes from "./reservations.routes.js";
 import reviewsRoutes from "./reviews.routes.js";
 
@@ -30,6 +31,7 @@ router.use("/health", healthRoutes);
 router.use("/auth", authRoutes);
 router.use("/users", usersRoutes);
 router.use("/hotels", hotelsRoutes);
+router.use("/rooms", roomsRoutes);
 router.use("/reservations", reservationsRoutes);
 router.use("/reviews", reviewsRoutes);
 
