@@ -1,0 +1,37 @@
+import { Route, Routes } from 'react-router-dom';
+import { Layout } from '@/components/shared/Layout';
+import { ProtectedRoute } from '@/routes/ProtectedRoute';
+
+import HomePage from '@/app/HomePage';
+import NotFoundPage from '@/app/NotFoundPage';
+
+import LoginPage from '@/features/auth/pages/LoginPage';
+import RegisterPage from '@/features/auth/pages/RegisterPage';
+import ProfilePage from '@/features/auth/pages/ProfilePage';
+
+import HotelsListPage from '@/features/hotels/pages/HotelsListPage';
+import HotelDetailsPage from '@/features/hotels/pages/HotelDetailsPage';
+
+import ReservationsPage from '@/features/reservations/pages/ReservationsPage';
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+
+        <Route path="hotels" element={<HotelsListPage />} />
+        <Route path="hotels/:id" element={<HotelDetailsPage />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="reservations" element={<ReservationsPage />} />
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
+  );
+}
