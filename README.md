@@ -1,4 +1,4 @@
-# Hotel Booking Web App (Academic Project)
+# Hotel Booking Web App
 
 Full-stack hotel booking platform built for a web development course project.
 
