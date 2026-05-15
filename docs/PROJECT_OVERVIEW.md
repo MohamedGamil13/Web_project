@@ -25,7 +25,6 @@ A hotel booking web application built as an academic group project. End users ca
 - Browser target: latest Chrome / Firefox / Edge. Desktop-first, mobile responsive as a stretch goal.
 
 ## 5. Constraints
-- Team size: 5 (FE: 2, BE: 3). Course-length timeline (~6–8 weeks).
 - Rubric-driven constraints override preferences:
   - Frontend forms should use **Formik**.
   - Frontend should use a mainstream responsive framework such as **Material-UI or Bootstrap**.
@@ -33,42 +32,12 @@ A hotel booking web application built as an academic group project. End users ca
 - No paid third-party services beyond free tiers.
 - Authentication is JWT (access token only, stored in localStorage for simplicity — documented as an academic trade-off).
 
-## 6. Teams & Roles
-- **Frontend (2):** pages, wireframes, component map, routing, API client, form validation.
-- **Backend (3):** DB schema, REST APIs, auth, validation, tests, OpenAPI docs.
+## 6. Entities
+- **Guest** — unauthenticated visitor; can browse and search hotels and read reviews.
+- **User** — authenticated end user; can reserve rooms, manage reservations, post reviews, edit profile.
+- **Admin** — seeded role only; no dedicated UI in this milestone. Used for data seeding/ops.
 
-### Responsibility Mapping
-| Member | Area of Ownership |
-|--------|-------------------|
-| FE1    | Layout, routing, auth, profile |
-| FE2    | Search, details, reservations, reviews UI |
-| BE1    | Auth, users, JWT, bcrypt |
-| BE2    | Hotels, rooms, search, filter |
-| BE3    | Reservations, reviews, tests, docs |
-
-## 7. Phases & Milestones (Rubric-Aligned)
-| # | Phase | Owner(s) | Exit criteria |
-|---|-------|----------|---------------|
-| 1 | Planning & Design | All | These 5 docs approved; entities + API contract locked |
-| 2 | Project Setup | All | Repos installable; FE renders shell; BE serves `/api/health`; Mongo connects |
-| 3 | Auth & Profile | FE1 + BE1 | Register/login/logout works end-to-end; JWT-protected `/me`; profile view + edit (password change deferred to Phase 7) |
-| 4 | Hotel Search & Filtering | FE2 + BE2 | Search page hits real `/hotels` API with filters + pagination |
-| 5 | Reservations | FE2 + BE3 | User can create + view + cancel reservations against real API |
-| 6 | Rubric Alignment Refactor | FE1 + FE2 | Migrate frontend forms to **Formik + Yup**; standardize on **Material-UI v9 + Emotion** for all UI primitives; remove Tailwind / shadcn / Radix from the runtime; update TRD/README accordingly |
-| 7 | Reviews & Ratings | FE2 + BE3 | User can post a review for a stayed hotel; average rating shown; reviews endpoints mounted and tested |
-| 8 | Testing, Docs & Polish | All | API tests expanded per endpoint; Swagger + API collection published; README finished; **password-change endpoint shipped**; demo run-through |
-
-## 8. Integration Checkpoints (FE mock → real API handoff)
-- **CP-0 (end of Phase 1):** Backend publishes the OpenAPI sketch in `API_PLAN.md`. Frontend builds an `apiClient` (axios) plus mock fixtures matching the response envelope.
-- **CP-1 (mid Phase 3):** BE1 delivers `/auth/register`, `/auth/login`, `/users/me`. FE1 swaps auth mocks for real calls.
-- **CP-2 (mid Phase 4):** BE2 delivers `/hotels` (list + filter + paginate) and `/hotels/:id` (with rooms). FE2 swaps search/details mocks.
-- **CP-3 (mid Phase 5):** BE3 delivers `/reservations` (create, list-mine, cancel). FE2 swaps reservation mocks.
-- **CP-4 (mid Phase 6):** BE3 delivers `/reviews`. FE2 swaps review mocks.
-- **CP-5 (Phase 7):** End-to-end demo run-through; bug bash; freeze.
-
-At each checkpoint the response envelope, error shape, and status codes are verified jointly. Any deviation is fixed on the BE side, never patched only on the FE.
-
-## 9. Risks
+## 7. Risks
 - Backend search/filter slipping blocks frontend integration → mitigated by mock fixtures matching the locked contract.
 - JWT in localStorage is academic-grade only; documented in TRD as a known trade-off.
 - MongoDB schemaless flexibility can hide bugs → Joi validation is mandatory at every write endpoint.

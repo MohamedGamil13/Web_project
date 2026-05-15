@@ -1,11 +1,6 @@
 # Functional Requirements Document (FRD)
 
-## 1. Actors
-- **Guest** — unauthenticated visitor; can browse and search hotels and read reviews.
-- **User** — authenticated end user; can reserve rooms, manage reservations, post reviews, edit profile.
-- **Admin** — seeded role only; no dedicated UI in this milestone. Used for data seeding/ops.
-
-## 2. Core Features
+## 1. Core Features
 - F1. Account: register, login, logout.
 - F2. Profile: view and edit own profile; change password.
 - F3. Hotel discovery: search by city/keyword; filter by price, star rating, amenities; sort; paginate.
@@ -14,7 +9,7 @@
 - F6. My reservations: list, cancel an upcoming reservation.
 - F7. Reviews: post a 1–5 star rating + comment for a hotel the user has stayed at; list reviews on hotel page.
 
-## 3. User Stories & Acceptance Criteria
+## 2. User Stories & Acceptance Criteria
 
 ### Epic A — Authentication
 **A1. Register**
@@ -98,14 +93,14 @@
 **F2. View reviews**
 - AC: hotel page shows the most recent reviews (paginated, 10 per page) and the computed average rating + total count.
 
-## 4. Non-functional Requirements
+## 3. Non-functional Requirements
 - Responsive layout from 1280px desktop down to 360px mobile (best-effort).
 - All write actions show a loading state and a success/error toast.
 - All forms validate on blur and on submit.
 - All protected pages redirect unauthenticated users to /login with a `returnTo` query param.
 - API p95 response time on a seeded dataset should be < 500ms locally.
 
-## 5. Out of Scope (this milestone)
+## 4. Out of Scope (this milestone)
 - Payments, refunds, currency conversion.
 - Hotel-owner / admin UIs.
 - Email verification / password reset flow.

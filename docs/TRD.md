@@ -2,11 +2,10 @@
 
 ## 0. Locked Decisions
 - Demo target: **local-only** (frontend dev server + backend dev server + local/Atlas Mongo). No cloud deploy required.
-- Frontend forms: **Formik + Yup** (rubric-aligned). RHF/Zod removed.
-- Frontend UI framework: **Material-UI v9 + Emotion** end-to-end. Tailwind, shadcn, and Radix have been removed; MUI is the only component library in the runtime.
+- Frontend forms: **Formik + Yup**
+- Frontend UI framework: **Material-UI v9 + Emotion** end-to-end.
 - Hotel images: URL string fields populated with placeholder links via the seed script.
 - Reservation completion: computed **lazily on read** (no scheduler).
-- Password-change endpoint (`PATCH /users/me/password`): delivered in **Phase 8** polish.
 - Refresh tokens / httpOnly cookie auth: out of scope.
 
 ## 1. Stack
