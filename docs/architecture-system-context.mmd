@@ -1,0 +1,11 @@
+flowchart LR
+  U["User Browser"]
+  A["React SPA Vite"]
+  B["Express API /api/v1"]
+  D[("MongoDB")]
+  S["Swagger /api/docs"]
+
+  U --> A
+  A -->|"JWT Bearer"| B
+  B --> D
+  U --> S

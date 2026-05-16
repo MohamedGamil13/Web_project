@@ -1,205 +1,104 @@
 # API Plan
 
-Base URL: `/api`
-All responses follow the envelope defined in `TRD.md` §3. Authenticated endpoints require `Authorization: Bearer <jwt>`.
-
-> **Locked decisions:** local-only demo target; **Formik + Yup + Material-UI v9** on the FE; placeholder image URLs seeded into `hotel.images`; reservation `status` is `active|cancelled` (past stays derived from dates client-side, no scheduler); refresh-token / cookie auth is out of scope; password change is **shipped** via a verify-then-update flow with a short-lived re-auth token; avatars are stored as files via multer (multipart upload) and served from `GET /users/:id/avatar`.
+Base URL: `http://localhost:5050/api/v1`
+All successful responses use `{ success, data, meta? }` envelope. Authenticated endpoints require `Authorization: Bearer <jwt>`.
 
 ## 0. Conventions
-- Dates are ISO 8601 strings (`YYYY-MM-DD` for date-only, full ISO for timestamps).
-- Pagination query: `?page=1&pageSize=10` (defaults 1 / 10, max 50). Response carries `meta.page`, `meta.pageSize`, `meta.total`.
-- Sorting query: `?sort=field` or `?sort=-field` for descending. Allowed fields per endpoint listed below.
-- All `id` path params are MongoDB ObjectIds. Bad ids → 422 `VALIDATION_ERROR`.
+- Dates: ISO 8601 strings.
+- Pagination: `page` (default 1), `pageSize` (default 10, max 50).
+- IDs: MongoDB ObjectId. Invalid IDs return 422.
 
-## 1. Module map & owners
-| Prefix | Owner | Module |
-|--------|-------|--------|
-| `/auth` | BE1 | Authentication |
-| `/users` | BE1 | Profile (self) |
-| `/hotels` | BE2 | Hotel browse + details |
-| `/hotels/:id/rooms` | BE2 | Hotel's rooms |
-| `/rooms/:id` | BE2 | Single room read |
-| `/reservations` | BE3 | Reservations |
-| `/hotels/:id/reviews` | BE3 | Hotel reviews list/create |
-| `/reviews/:id` | BE3 | Update / delete own review |
+## 1. Modules
+- `/auth` Authentication
+- `/users` Profile, roles, permission management
+- `/hotels` Hotel browse and management
+- `/rooms` Room read/update/delete
+- `/reservations` Reservation lifecycle
+- `/reviews` Review lifecycle
+- `/notifications` User notifications
+- `/analytics` Occupancy insights
 
 ## 2. Endpoints
 
-### 2.1 Auth (`/auth`) — **shipped in Phase 3**
-| Method | Path | Auth | Body | Success | Errors |
-|--------|------|------|------|---------|--------|
-| POST | `/auth/register` | — | `{ name, email, password, phone? }` | 201 `{ user, token }` | 422 validation, 409 email taken |
-| POST | `/auth/login` | — | `{ email, password }` | 200 `{ user, token }` | 422 validation, 401 bad credentials |
-| GET | `/auth/me` | user | — | 200 `user` | 401 |
-| POST | `/auth/logout` | user | — | 200 `{ ok: true }` | (stateless: client clears token) |
+### 2.1 Auth
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| POST | `/auth/register` | Public | Create account and issue JWT |
+| POST | `/auth/login` | Public | Login and issue JWT |
+| GET | `/auth/me` | User | Current user |
+| POST | `/auth/logout` | User | Stateless logout acknowledgement |
 
-`user` shape returned: `{ id, name, email, role, phone?, avatarUrl?, createdAt, updatedAt }`. `passwordHash` is never returned.
+### 2.2 Users
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/users/me` | User | Get own profile |
+| PATCH | `/users/me` | User | Update own profile |
+| POST | `/users/me/password/verify` | User | Verify current password, returns reauth token |
+| PATCH | `/users/me/password` | User | Change password with `x-reauth-token` |
+| POST | `/users/me/avatar` | User | Upload avatar |
+| DELETE | `/users/me/avatar` | User | Remove avatar |
+| GET | `/users/:id/avatar` | User | Serve avatar image |
+| GET | `/users` | Admin/Owner | List users |
+| PATCH | `/users/:id/role` | Owner | Change role `user` or `admin` |
+| GET | `/users/:id/permissions` | Owner | Get admin permission profile |
+| PATCH | `/users/:id/permissions` | Owner | Update admin permission overrides |
 
-Login error message: `"Invalid email or password"` is used for both an unknown email and a wrong password (no field-level enumeration).
-Register conflict: 409 `CONFLICT` with `error.message = "An account with that email already exists"`.
-
-### 2.2 Users (`/users`) — **shipped**
-| Method | Path | Auth | Body / Headers | Success | Errors |
-|--------|------|------|----------------|---------|--------|
-| GET | `/users/me` | user | — | 200 `user` | 401 |
-| PATCH | `/users/me` | user | `{ name?, email?, phone? }` (≥ 1 field) | 200 `user` | 422 validation, 409 email taken |
-| POST | `/users/me/password/verify` | user | `{ currentPassword }` | 200 `{ reauthToken, expiresIn }` (token valid 10 min) | 401 wrong current, 422 |
-| PATCH | `/users/me/password` | user | `{ newPassword }` + header `x-reauth-token: <token-from-verify>` | 200 `{ ok: true }` | 401 missing/expired re-auth token, 422 |
-| POST | `/users/me/avatar` | user | `multipart/form-data` field `avatar` (image, ≤ 5 MB, jpg/png/webp/gif) | 200 `user` (with refreshed `avatarUrl`) | 401, 422 invalid file |
-| DELETE | `/users/me/avatar` | user | — | 200 `user` | 401 |
-| GET | `/users/:id/avatar` | user | — (or `?token=<jwt>` for `<img>` tags) | 200 binary image | 401, 404 no avatar |
-
-**Notes:**
-- Email change re-checks uniqueness; passing `phone: ""` clears the field.
-- Avatar is **not** editable through `PATCH /users/me`. Use the dedicated multipart endpoint. The user document stores a private `avatarPath`; the API exposes a public `avatarUrl` of the form `/api/v1/users/<id>/avatar`. Auth for the GET is checked from either the `Authorization: Bearer …` header **or** a `?token=<jwt>` query string (so plain `<img src>` tags can render the avatar without custom headers).
-- Password change is a two-step flow:
-  1. `POST /users/me/password/verify` with the current password → server returns a 10-minute `reauthToken`.
-  2. `PATCH /users/me/password` with the new password and `x-reauth-token: <reauthToken>` → server hashes and persists.
-  This separates re-auth from the payload so the FE can cache the token across UI steps.
-
-### 2.3 Hotels (`/hotels`) — **shipped in Phase 4**
-| Method | Path | Auth | Query / Body | Success | Errors |
-|--------|------|------|--------------|---------|--------|
-| GET | `/hotels` | — | `q`, `city`, `minPrice`, `maxPrice`, `minStars`, `amenities` (comma-sep, lowercased), `sort` (`price`, `-price`, `-rating`, `name`, `-name`, `-createdAt`), `page` (≥ 1, default 1), `pageSize` (1–50, default 10) | 200 list of `hotel` + `meta: { page, pageSize, total }` | 422 (e.g. `maxPrice < minPrice`, unknown sort) |
-| GET | `/hotels/:id` | — | — | 200 `hotelDetail` (hotel + `rooms[]`) | 422 invalid id, 404 |
-| GET | `/hotels/:id/rooms` | — | — | 200 list of `room` | 422, 404 hotel |
-| POST | `/hotels` | admin | `{ name, city, country, starRating, description?, address?, amenities?, images?, priceFrom? }` | 201 `hotel` | 401, 403, 422 |
-| PATCH | `/hotels/:id` | admin | partial of create body, ≥ 1 field | 200 `hotel` | 401, 403, 422, 404 |
-| DELETE | `/hotels/:id` | admin | — | 200 `{ id }` (cascades rooms) | 401, 403, 404 |
-
-`hotel` summary shape: `{ id, name, city, country, starRating, amenities, priceFrom, reviewAvg, reviewCount, thumbnail }`.
-`hotelDetail` shape: `hotel` summary + `description`, `address`, `images`, `rooms[]`.
-
-### 2.4 Rooms (`/rooms`, `/hotels/:id/rooms`)
-| Method | Path | Auth | Query | Success | Errors |
-|--------|------|------|-------|---------|--------|
-| GET | `/hotels/:id/rooms` | — | (Phase 5: `checkIn`, `checkOut` to populate `available`) | 200 list of `room` | 422, 404 hotel |
-| GET | `/rooms/:id` | — | — | 200 `room` | 404 | _Phase 5_ |
-
-`room` shape: `{ id, hotel, roomType, capacity, pricePerNight, quantity, amenities, images, available? }`.
-
-### 2.5 Reservations (`/reservations`) — **shipped in Phase 5**
-All endpoints require `Authorization: Bearer <jwt>`. Users only ever see and act on their own reservations.
-
-| Method | Path | Auth | Body / Query | Success | Errors |
-|--------|------|------|--------------|---------|--------|
-| POST | `/reservations` | user | `{ roomId, checkIn, checkOut, guests }` | 201 `reservation` | 401, 422, 404 room, 409 not available |
-| GET | `/reservations/me` | user | — | 200 list of `reservation` (current user only, sorted by check-in desc) | 401 |
-| GET | `/reservations/:id` | user | — | 200 `reservation` | 401, 403 (not owner), 404 |
-| PATCH | `/reservations/:id/cancel` | user | — | 200 `reservation` (status=`cancelled`, `cancelledAt` set) | 401, 403 (not owner), 404, 409 (already cancelled, or check-in already started) |
-
-**Validation (POST):**
-- `roomId` is a 24-char ObjectId (422 otherwise).
-- `checkIn` / `checkOut` ISO date; `checkOut` must be strictly later than `checkIn`.
-- `guests` is an integer ≥ 1; capped at the room's `capacity` server-side (422 with `{ field: 'guests', message: '...' }`).
-- `checkIn` may not be in the past (422 with `{ field: 'checkIn' }`).
-
-**Availability (POST):** the server counts active reservations for `roomId` whose date range overlaps `[checkIn, checkOut)`. Two ranges overlap iff `existing.checkIn < new.checkOut AND existing.checkOut > new.checkIn`. If the count ≥ `room.quantity` → 409 `CONFLICT` with message `"Room is not available for the selected dates"`.
-
-**Price calculation:** `nights = round((checkOut - checkIn) / 1d)`, `totalPrice = nights * room.pricePerNight`. Prices are snapshotted onto the reservation document at create time so subsequent room price changes don't retroactively alter past bookings.
-
-**Cancellation:** allowed only on `status: 'active'` reservations whose `checkIn` is still in the future. Already-cancelled or already-started bookings → 409.
-
-`reservation` shape:
+Permission override payload:
 ```json
-{
-  "id": "…",
-  "userId": "…",
-  "status": "active" | "cancelled",
-  "checkIn": "2026-12-01T00:00:00.000Z",
-  "checkOut": "2026-12-05T00:00:00.000Z",
-  "guests": 2,
-  "nights": 4,
-  "totalPrice": 560,
-  "cancelledAt": null,
-  "createdAt": "2026-05-01T…",
-  "hotel": { "id": "…", "name": "…", "city": "…", "country": "…" },
-  "room": { "id": "…", "roomType": "double", "pricePerNight": 140, "capacity": 2 }
-}
+{ "allow": ["analytics.view"], "deny": ["rooms.manage"] }
 ```
 
-### 2.6 Reviews (`/hotels/:id/reviews`, `/reviews/:id`) — **shipped in Phase 7**
-| Method | Path | Auth | Body / Query | Success | Errors |
-|--------|------|------|--------------|---------|--------|
-| GET | `/hotels/:id/reviews` | — | `page` (≥ 1, default 1), `pageSize` (1–50, default 10), `sort` (`-createdAt` \| `createdAt` \| `-rating` \| `rating`, default `-createdAt`) | 200 list of `review` + `meta: { page, pageSize, total }` | 422, 404 hotel |
-| POST | `/hotels/:id/reviews` | user | `{ rating, comment? }` | 201 `review` | 401, 422, 404 hotel, **409** (already reviewed) |
-| GET | `/hotels/:id/reviews/me` | user | — | 200 `review \| null` | 401, 422 |
-| PATCH | `/reviews/:id` | user | `{ rating?, comment? }` (≥ 1 field) | 200 `review` | 401, 403 (not owner), 404, 422 |
-| DELETE | `/reviews/:id` | user | — | 200 `{ id }` | 401, 403, 404, 422 |
+### 2.3 Hotels
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/hotels` | Public | List hotels with filters |
+| GET | `/hotels/:id` | Public | Hotel details |
+| GET | `/hotels/:id/rooms` | Public | Rooms by hotel |
+| POST | `/hotels` | Admin/Owner | Create hotel |
+| PATCH | `/hotels/:id` | Admin/Owner | Update hotel |
+| DELETE | `/hotels/:id` | Admin/Owner | Delete hotel |
 
-**Validation:**
-- `rating` is an integer 1–5.
-- `comment` is optional, max 1000 characters.
+### 2.4 Rooms
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/rooms/:id` | Public | Get room |
+| PATCH | `/rooms/:id` | Admin/Owner | Update room |
+| DELETE | `/rooms/:id` | Admin/Owner | Delete room |
 
-**Business rules:**
-- One review per (user, hotel) — enforced by a unique compound index on `{ user, hotel }`. POSTing a second review for the same hotel returns 409 with the message *"You have already reviewed this hotel — update your existing review instead"*.
-- Only the owner can `PATCH` or `DELETE` their review (403 otherwise).
-- After every create / update / delete the hotel's `reviewAvg` and `reviewCount` are recomputed from the full set of reviews via a Mongo `$group` aggregation and persisted on the Hotel document.
+### 2.5 Reservations
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| POST | `/reservations` | User | Create reservation |
+| GET | `/reservations/me` | User | List own reservations |
+| GET | `/reservations/manage` | Admin/Owner | Staff reservations list |
+| GET | `/reservations/:id` | User/Admin/Owner | Get reservation |
+| GET | `/reservations/:id/timeline` | User/Admin/Owner | Workflow timeline |
+| PATCH | `/reservations/:id` | Admin/Owner | Staff update reservation |
+| PATCH | `/reservations/:id/cancel` | User/Admin/Owner | Cancel reservation |
 
-`review` shape:
-```json
-{
-  "id": "…",
-  "hotelId": "…",
-  "rating": 5,
-  "comment": "Great stay near the river.",
-  "user": { "id": "…", "name": "Alice", "avatarUrl": "…" | null },
-  "createdAt": "2026-05-01T10:00:00.000Z",
-  "updatedAt": "2026-05-01T10:00:00.000Z"
-}
-```
+### 2.6 Reviews
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/hotels/:id/reviews` | Public | List hotel reviews |
+| POST | `/hotels/:id/reviews` | User | Create review |
+| GET | `/hotels/:id/reviews/me` | User | Get own review for hotel |
+| PATCH | `/reviews/:id` | User | Update own review |
+| DELETE | `/reviews/:id` | User | Delete own review |
 
-`review` shape: `{ id, hotel, user: { id, name }, rating, comment, createdAt, updatedAt }`.
+### 2.7 Notifications
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/notifications/me` | User | List own notifications |
+| PATCH | `/notifications/:id/read` | User | Mark as read |
 
-### 2.7 Health
-| Method | Path | Auth | Success |
-|--------|------|------|---------|
-| GET | `/api/health` | — | 200 `{ status: "ok", uptime }` |
+### 2.8 Analytics
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/analytics/occupancy-insights` | Admin/Owner | Occupancy metrics and forecast |
 
-## 3. Validation Schemas (Joi sketches)
-- **register:** `name` 2–80; `email` valid email; `password` min 8, regex `/[A-Za-z]/` and `/[0-9]/`.
-- **login:** `email` valid email; `password` non-empty.
-- **createReservation:** `roomId` ObjectId; `checkIn` ISO date ≥ today; `checkOut` ISO date > checkIn; `guestCount` int ≥ 1.
-- **createReview:** `rating` int 1–5; `comment` ≤ 1000.
-- **hotels list query:** `minPrice ≥ 0`, `maxPrice ≥ minPrice`, `minStars` 1–5, `pageSize` ≤ 50.
-
-## 4. Mock Fixtures (FE)
-Until each integration checkpoint, `frontend/src/mocks/` provides JSON fixtures matching every shape above. Swapping mock → real is a single import change in `frontend/src/api/<resource>.js`.
-
-## 5. Sample Payloads
-
-### Login success
-```json
-{
-  "success": true,
-  "data": {
-    "user": { "id": "65f...", "name": "Ada", "email": "ada@x.io", "role": "user", "createdAt": "2026-04-12T10:00:00.000Z" },
-    "token": "eyJhbGciOi..."
-  }
-}
-```
-
-### Validation error (422)
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid request body",
-    "details": [
-      { "field": "checkOut", "message": "must be after checkIn" }
-    ]
-  }
-}
-```
-
-### Conflict (409 — room not available)
-```json
-{
-  "success": false,
-  "error": {
-    "code": "CONFLICT",
-    "message": "Room is not available for the selected dates"
-  }
-}
-```
+## 3. Role and Permission Notes
+- Roles: `owner`, `admin`, `user`.
+- Exactly one owner exists.
+- Route access is permission-driven.
+- Owner can edit admin permission overrides (`allow[]`, `deny[]`).
+- Owner permissions cannot be overridden.

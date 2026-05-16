@@ -1,23 +1,53 @@
 {
   "info": {
     "name": "Hotel Booking API",
-    "_postman_id": "hb-v1-academic",
-    "description": "Hotel Booking — Phase 7 academic project. After importing, run `Auth → Login (alice)` first; the test script captures the JWT into the `{{token}}` collection variable so every other request authenticates automatically.\n\nDefaults assume the local dev server (backend `npm run dev` on `http://localhost:5050`).",
+    "_postman_id": "hb-v1",
+    "description": "Hotel Booking API collection. After importing, run `Auth -> Login (owner)` or `Auth -> Login (alice)` first; the test script captures JWT into the `{{token}}` collection variable for authenticated requests.\n\nDefaults assume the local dev server (backend `npm run dev` on `http://localhost:5050`).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5050/api/v1" },
-    { "key": "token", "value": "" },
-    { "key": "hotelId", "value": "" },
-    { "key": "roomId", "value": "" },
-    { "key": "reservationId", "value": "" },
-    { "key": "reviewId", "value": "" },
-    { "key": "userId", "value": "" },
-    { "key": "reauthToken", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5050/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "hotelId",
+      "value": ""
+    },
+    {
+      "key": "roomId",
+      "value": ""
+    },
+    {
+      "key": "reservationId",
+      "value": ""
+    },
+    {
+      "key": "reviewId",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "reauthToken",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -27,8 +57,18 @@
           "name": "GET /health",
           "request": {
             "method": "GET",
-            "auth": { "type": "noauth" },
-            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
           }
         }
       ]
@@ -40,13 +80,29 @@
           "name": "Register",
           "request": {
             "method": "POST",
-            "auth": { "type": "noauth" },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"New User\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password1\",\n  \"phone\": \"+1 555 0100\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
           },
           "event": [
             {
@@ -68,13 +124,29 @@
           "name": "Login (alice)",
           "request": {
             "method": "POST",
-            "auth": { "type": "noauth" },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password1\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
           },
           "event": [
             {
@@ -95,16 +167,32 @@
           ]
         },
         {
-          "name": "Login (admin)",
+          "name": "Login (owner)",
           "request": {
             "method": "POST",
-            "auth": { "type": "noauth" },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password1\"\n}"
+              "raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"Password1\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
           },
           "event": [
             {
@@ -124,14 +212,32 @@
           "name": "Me",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
           }
         },
         {
           "name": "Logout",
           "request": {
             "method": "POST",
-            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
           }
         }
       ]
@@ -143,34 +249,69 @@
           "name": "Get my profile",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
           }
         },
         {
           "name": "Update my profile",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Alice Walker\",\n  \"phone\": \"+1 555 0101\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
           }
         },
         {
           "name": "Password — Verify current",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"currentPassword\": \"Password1\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/users/me/password/verify",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me", "password", "verify"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "password",
+                "verify"
+              ]
             }
           },
           "event": [
@@ -196,8 +337,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-reauth-token", "value": "{{reauthToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-reauth-token",
+                "value": "{{reauthToken}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -205,8 +352,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/me/password",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me", "password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "password"
+              ]
             },
             "description": "Run *Password — Verify current* first; the test script captures `reauthToken` into the collection variable used here."
           }
@@ -229,8 +382,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/me/avatar",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me", "avatar"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "avatar"
+              ]
             },
             "description": "Pick a local file with the `avatar` form field. Multer writes it to `backend/storage/avatars/`."
           }
@@ -241,8 +400,14 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/users/me/avatar",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "me", "avatar"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "avatar"
+              ]
             }
           }
         },
@@ -252,10 +417,112 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/users/{{userId}}/avatar",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}", "avatar"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "avatar"
+              ]
             },
             "description": "Auth required — bearer header OR `?token=<jwt>` query param so plain <img src> tags work."
+          }
+        },
+        {
+          "name": "List users (staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change user role (owner)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "role"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get user permissions (owner)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "permissions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update user permissions (owner)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"allow\": [\"analytics.view\"],\n  \"deny\": [\"rooms.manage\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "permissions"
+              ]
+            }
           }
         }
       ]
@@ -267,21 +534,63 @@
           "name": "List hotels (with filters)",
           "request": {
             "method": "GET",
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{baseUrl}}/hotels?page=1&pageSize=10&sort=-rating",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ],
               "query": [
-                { "key": "q", "value": "lis", "disabled": true, "description": "search by name/city/country (substring, case-insensitive)" },
-                { "key": "city", "value": "Lisbon", "disabled": true },
-                { "key": "minPrice", "value": "50", "disabled": true },
-                { "key": "maxPrice", "value": "300", "disabled": true },
-                { "key": "minStars", "value": "3", "disabled": true },
-                { "key": "amenities", "value": "wifi,pool", "disabled": true, "description": "comma-separated, lowercased" },
-                { "key": "sort", "value": "-rating", "description": "price | -price | -rating | name | -name | -createdAt" },
-                { "key": "page", "value": "1" },
-                { "key": "pageSize", "value": "10" }
+                {
+                  "key": "q",
+                  "value": "lis",
+                  "disabled": true,
+                  "description": "search by name/city/country (substring, case-insensitive)"
+                },
+                {
+                  "key": "city",
+                  "value": "Lisbon",
+                  "disabled": true
+                },
+                {
+                  "key": "minPrice",
+                  "value": "50",
+                  "disabled": true
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "300",
+                  "disabled": true
+                },
+                {
+                  "key": "minStars",
+                  "value": "3",
+                  "disabled": true
+                },
+                {
+                  "key": "amenities",
+                  "value": "wifi,pool",
+                  "disabled": true,
+                  "description": "comma-separated, lowercased"
+                },
+                {
+                  "key": "sort",
+                  "value": "-rating",
+                  "description": "price | -price | -rating | name | -name | -createdAt"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
               ]
             }
           },
@@ -304,8 +613,19 @@
           "name": "Get hotel detail",
           "request": {
             "method": "GET",
-            "auth": { "type": "noauth" },
-            "url": { "raw": "{{baseUrl}}/hotels/{{hotelId}}", "host": ["{{baseUrl}}"], "path": ["hotels", "{{hotelId}}"] }
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}"
+              ]
+            }
           },
           "event": [
             {
@@ -326,43 +646,87 @@
           "name": "List rooms for a hotel",
           "request": {
             "method": "GET",
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{baseUrl}}/hotels/{{hotelId}}/rooms",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "{{hotelId}}", "rooms"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}",
+                "rooms"
+              ]
             }
           }
         },
         {
-          "name": "[admin] Create hotel",
+          "name": "[staff] Create hotel",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"New Test Hotel\",\n  \"city\": \"Faro\",\n  \"country\": \"Portugal\",\n  \"starRating\": 4,\n  \"description\": \"Demo hotel created via Postman.\",\n  \"amenities\": [\"wifi\", \"pool\"],\n  \"images\": [\"https://picsum.photos/seed/new-hotel/800/600\"],\n  \"priceFrom\": 120\n}"
+              "raw": "{\n  \"name\": \"New Test Hotel\",\n  \"city\": \"Faro\",\n  \"country\": \"Portugal\",\n  \"starRating\": 4,\n  \"description\": \"Hotel created via Postman.\",\n  \"amenities\": [\"wifi\", \"pool\"],\n  \"images\": [\"https://picsum.photos/seed/new-hotel/800/600\"],\n  \"priceFrom\": 120\n}"
             },
-            "url": { "raw": "{{baseUrl}}/hotels", "host": ["{{baseUrl}}"], "path": ["hotels"] }
+            "url": {
+              "raw": "{{baseUrl}}/hotels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            }
           }
         },
         {
-          "name": "[admin] Update hotel",
+          "name": "[staff] Update hotel",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"description\": \"Updated description.\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/hotels/{{hotelId}}", "host": ["{{baseUrl}}"], "path": ["hotels", "{{hotelId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}"
+              ]
+            }
           }
         },
         {
-          "name": "[admin] Delete hotel",
+          "name": "[staff] Delete hotel",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/hotels/{{hotelId}}", "host": ["{{baseUrl}}"], "path": ["hotels", "{{hotelId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/hotels/{{hotelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}"
+              ]
+            }
           }
         }
       ]
@@ -374,12 +738,25 @@
           "name": "Create reservation",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"checkIn\": \"2026-12-01\",\n  \"checkOut\": \"2026-12-05\",\n  \"guests\": 2\n}"
             },
-            "url": { "raw": "{{baseUrl}}/reservations", "host": ["{{baseUrl}}"], "path": ["reservations"] }
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            }
           },
           "event": [
             {
@@ -399,7 +776,16 @@
           "name": "List my reservations",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/reservations/me", "host": ["{{baseUrl}}"], "path": ["reservations", "me"] }
+            "url": {
+              "raw": "{{baseUrl}}/reservations/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "me"
+              ]
+            }
           }
         },
         {
@@ -408,8 +794,13 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/reservations/{{reservationId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["reservations", "{{reservationId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
             }
           }
         },
@@ -419,8 +810,83 @@
             "method": "PATCH",
             "url": {
               "raw": "{{baseUrl}}/reservations/{{reservationId}}/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["reservations", "{{reservationId}}", "cancel"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}",
+                "cancel"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List reservations (staff manage)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/manage?page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "manage"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get reservation timeline",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}/timeline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}",
+                "timeline"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update reservation (staff)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkIn\": \"2026-12-02\",\n  \"checkOut\": \"2026-12-06\",\n  \"guests\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
             }
           }
         }
@@ -433,15 +899,33 @@
           "name": "List reviews for a hotel",
           "request": {
             "method": "GET",
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{baseUrl}}/hotels/{{hotelId}}/reviews?page=1&pageSize=10&sort=-createdAt",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "{{hotelId}}", "reviews"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}",
+                "reviews"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "pageSize", "value": "10" },
-                { "key": "sort", "value": "-createdAt", "description": "-createdAt | createdAt | -rating | rating" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "-createdAt",
+                  "description": "-createdAt | createdAt | -rating | rating"
+                }
               ]
             }
           }
@@ -452,8 +936,15 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/hotels/{{hotelId}}/reviews/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "{{hotelId}}", "reviews", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}",
+                "reviews",
+                "me"
+              ]
             }
           }
         },
@@ -461,15 +952,26 @@
           "name": "Create a review",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great stay near the river.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/hotels/{{hotelId}}/reviews",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "{{hotelId}}", "reviews"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hotels",
+                "{{hotelId}}",
+                "reviews"
+              ]
             }
           },
           "event": [
@@ -490,19 +992,69 @@
           "name": "Update my review",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated comment.\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "{{reviewId}}"
+              ]
+            }
           }
         },
         {
           "name": "Delete my review",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reviews",
+                "{{reviewId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Occupancy insights (staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/analytics/occupancy-insights?days=14",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analytics",
+                "occupancy-insights"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "14"
+                }
+              ]
+            }
           }
         }
       ]

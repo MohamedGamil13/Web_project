@@ -14,7 +14,8 @@ import {
   createForHotel as createReviewForHotel,
 } from "../../controllers/reviews.controller.js";
 import { validate } from "../../middleware/validate.js";
-import { requireAuth, requireRole } from "../../middleware/auth.js";
+import { requireAuth, requirePermission } from "../../middleware/auth.js";
+import { PERMISSIONS } from "../../auth/permissions.js";
 import {
   listHotelsQuerySchema,
   objectIdParam,
@@ -123,7 +124,7 @@ router.get("/:id/rooms", validate(objectIdParam, "params"), listHotelRooms);
 router.post(
   "/:id/rooms",
   requireAuth,
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.ROOMS_MANAGE),
   validate(objectIdParam, "params"),
   validate(createRoomSchema),
   createRoom,
@@ -175,14 +176,14 @@ router.get(
 router.post(
   "/",
   requireAuth,
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.HOTELS_MANAGE),
   validate(createHotelSchema),
   createHotel,
 );
 router.patch(
   "/:id",
   requireAuth,
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.HOTELS_MANAGE),
   validate(objectIdParam, "params"),
   validate(updateHotelSchema),
   updateHotel,
@@ -190,7 +191,7 @@ router.patch(
 router.delete(
   "/:id",
   requireAuth,
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.HOTELS_MANAGE),
   validate(objectIdParam, "params"),
   deleteHotel,
 );

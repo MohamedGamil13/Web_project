@@ -106,13 +106,14 @@ async function seed() {
   console.log("[seed] cleared users, hotels, rooms");
 
   const passwordHash = await bcrypt.hash("Password1", env.bcryptRounds);
-  const [admin, alice, bob] = await User.create([
+  const [owner, admin, alice, bob] = await User.create([
+    { name: "Owner", email: "owner@example.com", passwordHash, role: "owner" },
     { name: "Admin", email: "admin@example.com", passwordHash, role: "admin" },
     { name: "Alice", email: "alice@example.com", passwordHash, role: "user" },
     { name: "Bob", email: "bob@example.com", passwordHash, role: "user" },
   ]);
   console.log(
-    `[seed] users: ${admin.email}, ${alice.email}, ${bob.email} (password: Password1)`,
+    `[seed] users: ${owner.email}, ${admin.email}, ${alice.email}, ${bob.email} (password: Password1)`,
   );
 
   for (const data of HOTELS) {

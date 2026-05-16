@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link as RouterLink, NavLink } from "react-router-dom";
 import {
   AppBar,
+  Badge,
   Box,
   Button,
   Container,
@@ -22,11 +23,14 @@ import {
   useTheme,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnreadNotificationsCount } from "@/features/notifications/hooks";
 import { UserAvatar } from "./UserAvatar";
+import { isStaff } from "@/lib/access";
 
 const PUBLIC_LINKS = [{ to: "/hotels", label: "Hotels" }];
-const AUTHED_LINKS = [{ to: "/reservations", label: "My Reservations" }];
+const USER_LINKS = [{ to: "/reservations", label: "My Reservations" }];
 
 function NavLinkItem({ to, label, end }) {
   return (
@@ -58,12 +62,18 @@ export function Navbar() {
   const accountOpen = Boolean(accountAnchor);
 
   const adminLinks =
-    user?.role === "admin"
-      ? [{ to: "/admin/reservations", label: "Reservations" }]
+    isStaff(user?.role)
+      ? [
+        { to: "/admin/reservations", label: "Reservations" },
+        { to: "/admin/insights", label: "Insights" },
+        { to: "/admin/users", label: "Users" },
+      ]
       : [];
+  const memberLinks = isStaff(user?.role) ? [] : USER_LINKS;
   const allLinks = isAuthenticated
-    ? [...PUBLIC_LINKS, ...AUTHED_LINKS, ...adminLinks]
+    ? [...PUBLIC_LINKS, ...memberLinks, ...adminLinks]
     : PUBLIC_LINKS;
+  const unreadCount = useUnreadNotificationsCount(isAuthenticated);
 
   function closeAccount() {
     setAccountAnchor(null);
@@ -135,6 +145,18 @@ export function Navbar() {
           >
             {isAuthenticated ? (
               <>
+                <Tooltip title="Notifications">
+                  <IconButton
+                    component={RouterLink}
+                    to="/notifications"
+                    aria-label="open notifications"
+                    size="small"
+                  >
+                    <Badge color="error" badgeContent={unreadCount} max={99}>
+                      <NotificationsNoneOutlinedIcon fontSize="small" />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
                 <Tooltip title="Account">
                   <IconButton
                     onClick={(e) => setAccountAnchor(e.currentTarget)}
@@ -172,21 +194,46 @@ export function Navbar() {
                   >
                     Profile
                   </MenuItem>
-                  <MenuItem
-                    component={RouterLink}
-                    to="/reservations"
-                    onClick={closeAccount}
-                  >
-                    My reservations
-                  </MenuItem>
-                  {user?.role === "admin" && (
+                  {!isStaff(user?.role) && (
                     <MenuItem
                       component={RouterLink}
-                      to="/admin/reservations"
+                      to="/reservations"
                       onClick={closeAccount}
                     >
-                      Reservations
+                      My reservations
                     </MenuItem>
+                  )}
+                  <MenuItem
+                    component={RouterLink}
+                    to="/notifications"
+                    onClick={closeAccount}
+                  >
+                    Notifications
+                  </MenuItem>
+                  {isStaff(user?.role) && (
+                    <>
+                      <MenuItem
+                        component={RouterLink}
+                        to="/admin/reservations"
+                        onClick={closeAccount}
+                      >
+                        Reservations
+                      </MenuItem>
+                      <MenuItem
+                        component={RouterLink}
+                        to="/admin/insights"
+                        onClick={closeAccount}
+                      >
+                        Insights
+                      </MenuItem>
+                      <MenuItem
+                        component={RouterLink}
+                        to="/admin/users"
+                        onClick={closeAccount}
+                      >
+                        Users
+                      </MenuItem>
+                    </>
                   )}
                   <Divider />
                   <MenuItem onClick={handleLogout}>Logout</MenuItem>
@@ -258,6 +305,19 @@ export function Navbar() {
                 </ListItemButton>
               </ListItem>
             ))}
+            {isAuthenticated && (
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={RouterLink}
+                  to="/notifications"
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  <ListItemText
+                    primary={`Notifications${unreadCount ? ` (${unreadCount})` : ""}`}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )}
             {isAuthenticated && (
               <ListItem disablePadding>
                 <ListItemButton

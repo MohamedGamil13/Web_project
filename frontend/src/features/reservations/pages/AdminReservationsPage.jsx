@@ -24,6 +24,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ReservationCard } from "../ReservationCard";
+import { ReservationTimelineDialog } from "../ReservationTimelineDialog";
 import {
   cancelReservation,
   listAdminReservations,
@@ -66,6 +67,7 @@ export default function AdminReservationsPage() {
   const [saving, setSaving] = useState(false);
   const [dialogError, setDialogError] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [timelineTarget, setTimelineTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState(null);
   const [priceDraft, setPriceDraft] = useState(DEFAULT_FILTERS.priceRange);
@@ -296,13 +298,22 @@ export default function AdminReservationsPage() {
                         cancellable={reservation.status === "active"}
                         onCancel={() => setCancelTarget(reservation)}
                         actions={
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => openEditDialog(reservation)}
-                          >
-                            Edit
-                          </Button>
+                          <Stack direction="row" spacing={1}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => setTimelineTarget(reservation)}
+                            >
+                              Timeline
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => openEditDialog(reservation)}
+                            >
+                              Edit
+                            </Button>
+                          </Stack>
                         }
                       />
                     ))}
@@ -425,6 +436,12 @@ export default function AdminReservationsPage() {
         destructive
         busy={cancelling}
         onConfirm={confirmCancelReservation}
+      />
+
+      <ReservationTimelineDialog
+        open={Boolean(timelineTarget)}
+        onClose={() => setTimelineTarget(null)}
+        reservation={timelineTarget}
       />
     </Container>
   );

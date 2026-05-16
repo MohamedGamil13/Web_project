@@ -1,7 +1,7 @@
 # Technical Requirements Document (TRD)
 
 ## 0. Locked Decisions
-- Demo target: **local-only** (frontend dev server + backend dev server + local/Atlas Mongo). No cloud deploy required.
+- Runtime target: **local-only** (frontend dev server + backend dev server + local/Atlas Mongo).
 - Frontend forms: **Formik + Yup**
 - Frontend UI framework: **Material-UI v9 + Emotion** end-to-end.
 - Hotel images: URL string fields populated with placeholder links via the seed script.
@@ -27,7 +27,7 @@
 - Auth: jsonwebtoken (HS256) + bcryptjs
 - Validation: Joi v18
 - Middleware: helmet, cors, morgan, dotenv
-- Tests: Jest + Supertest (`NODE_OPTIONS=--experimental-vm-modules`)
+- Tests: Jest + Supertest (`node --experimental-vm-modules ...jest.js`)
 - Docs: swagger-jsdoc + swagger-ui-express, served at `/api/docs`
 
 ## 2. Repository Layout
@@ -41,6 +41,9 @@
       auth/        # AuthContext, Yup schemas, api, login/register/profile pages
       hotels/      # api, filters, HotelCard, HotelFilters, list + details pages
       reservations/# api, schemas, ReserveDialog, ReservationCard, current + history pages
+      notifications/# api, polling hook, notifications page
+      analytics/# admin occupancy insights page
+      users/       # admin user-role management page
       reviews/     # api, schemas, ReviewForm, ReviewItem, ReviewsSection
     hooks/         # useAuth, useDebouncedValue
     lib/           # apiClient (axios), env, formik-mui, imageResize
@@ -51,14 +54,55 @@
     controllers/   # thin asyncHandler wrappers
     docs/          # Swagger setup
     middleware/    # auth, errorHandler, notFound, security, validate
-    models/        # User, Hotel, Room, Reservation, Review
-    routes/v1/     # health, auth, users, hotels, reservations, reviews
+    models/        # User, Hotel, Room, Reservation, Review, Notification
+    routes/v1/     # health, auth, users, hotels, reservations, notifications, analytics, reviews
     scripts/       # seed.js
     services/      # business logic per resource
     utils/         # ApiError, asyncHandler, response (ok/created)
     validators/    # Joi schemas
     app.js, server.js
   tests/           # one suite per endpoint group
+```
+
+## 2.1 Architecture Diagrams (Mermaid + Draw.io)
+This project includes architecture diagrams in both required formats:
+- Mermaid diagrams in this TRD section.
+- Mermaid source files:
+  - `docs/architecture-system-context.mmd`
+  - `docs/architecture-reservation-workflow.mmd`
+  - `docs/architecture-access-control.mmd`
+- Draw.io source file: `docs/architecture.drawio`.
+
+### Mermaid — System Context
+```mermaid
+flowchart LR
+  U[User Browser]
+  A[React SPA Vite]
+  B[Express API /api/v1]
+  D[(MongoDB)]
+  S[Swagger /api/docs]
+
+  U --> A
+  A -->|JWT Bearer| B
+  B --> D
+  U --> S
+```
+
+### Mermaid — Reservation Workflow
+```mermaid
+sequenceDiagram
+  participant User
+  participant SPA as React SPA
+  participant API as Express API
+  participant DB as MongoDB
+
+  User->>SPA: Choose hotel room + dates
+  SPA->>API: POST /reservations
+  API->>DB: Validate overlap + quantity
+  DB-->>API: Availability result
+  API->>DB: Create reservation + workflow event
+  API-->>SPA: Reservation with pricing
+  SPA-->>User: Confirmation + timeline
 ```
 
 ## 3. API Contract Style
@@ -107,9 +151,18 @@ Every successful response follows:
 - Password hashing: bcryptjs, cost factor 10.
 - Token: JWT (HS256) signed with `JWT_SECRET`, expiry from `JWT_EXPIRES_IN` (default 7d).
 - Payload: `{ sub: userId, role }`.
-- Storage: localStorage on the client. **Trade-off accepted for academic scope** — documented here so reviewers know we know. Refresh tokens / httpOnly cookie auth are explicitly out of scope for this iteration.
+- Storage: localStorage on the client. Refresh tokens / httpOnly cookie auth are out of scope for this release.
 - Transport: `Authorization: Bearer <token>` header on every protected call.
-- `authMiddleware` decodes the token, attaches `req.user = { id, role }`, and rejects with 401 on missing/invalid/expired token.
+- `authMiddleware` decodes the token, resolves effective permissions, attaches `req.user = { id, role, permissions }`, and rejects with 401 on missing/invalid/expired token.
+
+## 4.1 Authorization
+- Roles: `owner`, `admin`, `user`.
+- Exactly one `owner` account is enforced by a unique partial index on `users.role = owner`.
+- Route guards are permission-based (`requirePermission`), not role-branching.
+- Base permissions are derived from role defaults.
+- For `admin` users, owner can set per-user permission overrides (`allow[]`, `deny[]`).
+- Effective permissions are computed server-side as: `role defaults + allow[] - deny[]`.
+- Owner role permissions are not overrideable.
 
 ## 5. Validation
 - Every write endpoint goes through a Joi schema via a shared `validate(schema, where)` middleware (`where` ∈ `body | params | query`).
@@ -128,7 +181,7 @@ Every successful response follows:
 
 ## 8. Testing
 - Backend: Jest + Supertest. One integration test per route module covering happy path + at least one error path.
-- Frontend: no formal unit tests required this milestone — manual checklist + axe-style sanity in the demo.
+- Frontend: no formal unit tests in this release; manual QA checklist is used.
 
 ## 9. Documentation
 - Swagger UI at `/api/docs` driven by JSDoc on each route.
@@ -140,3 +193,49 @@ Every successful response follows:
 - All endpoints return the envelope above; no raw `res.json(doc)` allowed (a helper `ok(res, data)` enforces this).
 - No secrets committed; `.env` is gitignored.
 - ESLint passes on the frontend.
+
+## 11. Pricing and Charges
+- Reservation pricing is calculated server-side and persisted on each reservation:
+  - `subtotal = nights * room.pricePerNight`
+  - `serviceFee = 8%` of subtotal
+  - `taxAmount = 14%` of `(subtotal + serviceFee)`
+  - `totalPrice = subtotal + serviceFee + taxAmount`
+- Frontend shows the same breakdown in reserve/confirmation/reservation views.
+
+## 12. Reservation Workflow Tracking
+- Reservation lifecycle is tracked as ordered workflow events on each reservation.
+- Current events: `created`, `updated` (staff), `cancelled`.
+- Each event includes actor role (`user`/`admin`/`owner`/`system`), message, and timestamp.
+- Timeline is available from `GET /reservations/:id/timeline` and rendered in reservation pages.
+
+
+
+### Mermaid � Access Control
+```mermaid
+flowchart LR
+  O["Owner (UI)"]
+  A["Admin (UI)"]
+  U["User (UI)"]
+  SPA["React SPA"]
+  API["Express API"]
+  AUTH["Auth Middleware"]
+  RES["Permission Resolver"]
+  DBU[("Users Collection\nrole + permissionOverrides")]
+  GUARD["Route Guard\nrequirePermission(...)"]
+
+  O --> SPA
+  A --> SPA
+  U --> SPA
+
+  SPA -->|"Bearer JWT"| API
+  API --> AUTH
+  AUTH --> DBU
+  AUTH --> RES
+  RES --> GUARD
+
+  O -->|"PATCH /users/:id/role"| API
+  O -->|"GET/PATCH /users/:id/permissions"| API
+
+  A -->|"staff ops (hotels, rooms, reservations, analytics)"| API
+  U -->|"self ops (profile, reservations, reviews)"| API
+```

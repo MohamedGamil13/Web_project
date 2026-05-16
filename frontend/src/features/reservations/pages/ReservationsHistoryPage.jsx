@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { ReservationCard } from "../ReservationCard";
+import { ReservationTimelineDialog } from "../ReservationTimelineDialog";
 import { listMyReservations } from "../api";
 
 function isPastStay(reservation) {
@@ -32,6 +33,7 @@ export default function ReservationsHistoryPage() {
     items: [],
     error: null,
   });
+  const [timelineTarget, setTimelineTarget] = useState(null);
 
   async function refresh() {
     setState((s) => ({ ...s, status: "loading", error: null }));
@@ -111,7 +113,15 @@ export default function ReservationsHistoryPage() {
         {state.status === "success" && past.length > 0 && (
           <Section title="Past stays">
             {past.map((r) => (
-              <ReservationCard key={r.id} reservation={r} />
+              <ReservationCard
+                key={r.id}
+                reservation={r}
+                actions={
+                  <Button size="small" variant="outlined" onClick={() => setTimelineTarget(r)}>
+                    Timeline
+                  </Button>
+                }
+              />
             ))}
           </Section>
         )}
@@ -119,11 +129,24 @@ export default function ReservationsHistoryPage() {
         {state.status === "success" && cancelled.length > 0 && (
           <Section title="Cancelled">
             {cancelled.map((r) => (
-              <ReservationCard key={r.id} reservation={r} />
+              <ReservationCard
+                key={r.id}
+                reservation={r}
+                actions={
+                  <Button size="small" variant="outlined" onClick={() => setTimelineTarget(r)}>
+                    Timeline
+                  </Button>
+                }
+              />
             ))}
           </Section>
         )}
       </Stack>
+      <ReservationTimelineDialog
+        open={Boolean(timelineTarget)}
+        onClose={() => setTimelineTarget(null)}
+        reservation={timelineTarget}
+      />
     </Container>
   );
 }

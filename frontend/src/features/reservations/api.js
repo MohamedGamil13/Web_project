@@ -10,6 +10,11 @@ export async function getReservation(id) {
   return unwrap(res);
 }
 
+export async function getReservationTimeline(id) {
+  const res = await apiClient.get(`/reservations/${id}/timeline`);
+  return unwrap(res) ?? [];
+}
+
 export async function createReservation(payload) {
   const res = await apiClient.post("/reservations", payload);
   return unwrap(res);

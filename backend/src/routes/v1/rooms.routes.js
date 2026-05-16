@@ -4,7 +4,8 @@ import {
   updateRoom,
   deleteRoom,
 } from "../../controllers/hotels.controller.js";
-import { requireAuth, requireRole } from "../../middleware/auth.js";
+import { requireAuth, requirePermission } from "../../middleware/auth.js";
+import { PERMISSIONS } from "../../auth/permissions.js";
 import { validate } from "../../middleware/validate.js";
 import {
   objectIdParam,
@@ -17,7 +18,7 @@ router.get("/:id", validate(objectIdParam, "params"), getRoom);
 router.patch(
   "/:id",
   requireAuth,
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.ROOMS_MANAGE),
   validate(objectIdParam, "params"),
   validate(updateRoomSchema),
   updateRoom,
@@ -25,7 +26,7 @@ router.patch(
 router.delete(
   "/:id",
   requireAuth,
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.ROOMS_MANAGE),
   validate(objectIdParam, "params"),
   deleteRoom,
 );

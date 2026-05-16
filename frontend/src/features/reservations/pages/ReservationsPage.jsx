@@ -14,6 +14,7 @@ import {
 import HistoryIcon from "@mui/icons-material/History";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ReservationCard } from "../ReservationCard";
+import { ReservationTimelineDialog } from "../ReservationTimelineDialog";
 import { cancelReservation, listMyReservations } from "../api";
 
 const RECENT_CANCELLED_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -41,6 +42,7 @@ export default function ReservationsPage() {
     error: null,
   });
   const [target, setTarget] = useState(null);
+  const [timelineTarget, setTimelineTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState(null);
 
@@ -162,6 +164,11 @@ export default function ReservationsPage() {
                     reservation={r}
                     onCancel={() => setTarget(r)}
                     cancellable
+                    actions={
+                      <Button size="small" variant="outlined" onClick={() => setTimelineTarget(r)}>
+                        Timeline
+                      </Button>
+                    }
                   />
                 ))}
               </Section>
@@ -173,7 +180,15 @@ export default function ReservationsPage() {
                 subtitle="Cancelled in the last hour. Older cancellations live under past reservations."
               >
                 {recentlyCancelled.map((r) => (
-                  <ReservationCard key={r.id} reservation={r} />
+                  <ReservationCard
+                    key={r.id}
+                    reservation={r}
+                    actions={
+                      <Button size="small" variant="outlined" onClick={() => setTimelineTarget(r)}>
+                        Timeline
+                      </Button>
+                    }
+                  />
                 ))}
               </Section>
             )}
@@ -202,6 +217,12 @@ export default function ReservationsPage() {
         destructive
         busy={cancelling}
         onConfirm={handleConfirmCancel}
+      />
+
+      <ReservationTimelineDialog
+        open={Boolean(timelineTarget)}
+        onClose={() => setTimelineTarget(null)}
+        reservation={timelineTarget}
       />
     </Container>
   );

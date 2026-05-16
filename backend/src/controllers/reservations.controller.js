@@ -27,6 +27,15 @@ export const getOne = asyncHandler(async (req, res) => {
   ok(res, reservation);
 });
 
+export const getTimeline = asyncHandler(async (req, res) => {
+  const timeline = await reservationsService.getReservationTimeline(
+    req.user.id,
+    req.user.role,
+    req.params.id,
+  );
+  ok(res, timeline);
+});
+
 export const cancel = asyncHandler(async (req, res) => {
   const reservation = await reservationsService.cancelReservation(
     req.user.id,
@@ -45,6 +54,8 @@ export const updateAdmin = asyncHandler(async (req, res) => {
   const reservation = await reservationsService.updateReservationAsAdmin(
     req.params.id,
     req.body,
+    req.user.id,
+    req.user.role,
   );
   ok(res, reservation);
 });

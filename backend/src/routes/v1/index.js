@@ -6,6 +6,8 @@ import hotelsRoutes from "./hotels.routes.js";
 import roomsRoutes from "./rooms.routes.js";
 import reservationsRoutes from "./reservations.routes.js";
 import reviewsRoutes from "./reviews.routes.js";
+import notificationsRoutes from "./notifications.routes.js";
+import analyticsRoutes from "./analytics.routes.js";
 
 const router = Router();
 
@@ -22,6 +24,8 @@ router.get("/", (_req, res) => {
         "rooms",
         "reservations",
         "reviews",
+        "notifications",
+        "analytics",
       ],
     },
   });
@@ -34,5 +38,7 @@ router.use("/hotels", hotelsRoutes);
 router.use("/rooms", roomsRoutes);
 router.use("/reservations", reservationsRoutes);
 router.use("/reviews", reviewsRoutes);
+router.use("/notifications", notificationsRoutes);
+router.use("/analytics", analyticsRoutes);
 
 export default router;

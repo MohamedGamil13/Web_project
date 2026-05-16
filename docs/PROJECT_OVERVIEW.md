@@ -1,43 +1,41 @@
 # Project Overview
 
 ## 1. Summary
-A hotel booking web application built as an academic group project. End users can register, search and filter hotels, view hotel and room details, make and cancel reservations, and post reviews. The system has a single React SPA frontend and a Node.js/Express REST backend backed by MongoDB.
+Hotel booking application with a React SPA frontend and a Node.js/Express REST backend backed by MongoDB.
 
 ## 2. Goals
-- Deliver a working, demo-ready hotel booking app within the course timeline.
-- Practice realistic full-stack collaboration: planning, API contract, parallel FE/BE work, integration.
-- Produce clean, documented code (Swagger for API, README for setup) and a small test suite.
+- Deliver a stable booking flow with clear API contracts and documented behavior.
+- Keep frontend and backend integration consistent through shared payload shapes.
+- Maintain operational documentation for setup, testing, and API usage.
 
 ## 3. Non-Goals
-- No real payment processing (reservations are confirmed without charging a card).
-- **No cloud deployment**: demo target is local-only (FE dev server + BE dev server + local/Atlas Mongo).
-- No CI/CD pipelines.
-- No admin dashboard, hotel-owner portal, or multi-tenant features.
-- No email/SMS notifications, no i18n, no real-time chat.
-- No advanced search (no map view, no geosearch radius, no recommendations engine).
-- **No refresh tokens / httpOnly cookie auth** this iteration — JWT-only.
+- Payment processing, refunds, and invoicing.
+- Cloud deployment and CI/CD pipelines.
+- Hotel-owner portal and multi-tenant architecture.
+- Email/SMS notifications, i18n, and real-time chat.
+- Map/geospatial search and recommendations.
+- Refresh-token and httpOnly cookie auth in this release.
 
-## 4. Assumptions
-- Hotel and room data is seeded via a script — there is no UI for creating hotels.
-- Single user role for the app: `user`. An `admin` role exists in the schema for seeding/data ops only and has no dedicated UI.
-- One MongoDB instance (local or Atlas free tier) is sufficient.
-- Team works on a single shared GitHub repo with feature branches and PR reviews.
-- Browser target: latest Chrome / Firefox / Edge. Desktop-first, mobile responsive as a stretch goal.
+## 4. Runtime Assumptions
+- Local runtime: frontend dev server + backend dev server + local/Atlas MongoDB.
+- Hotel and room data is seeded through `backend/src/scripts/seed.js`.
+- Latest Chrome/Firefox/Edge are primary browser targets.
 
-## 5. Constraints
-- Rubric-driven constraints override preferences:
-  - Frontend forms should use **Formik**.
-  - Frontend should use a mainstream responsive framework such as **Material-UI or Bootstrap**.
-  - Backend remains Node + Express with JWT auth and bcrypt password hashing.
-- No paid third-party services beyond free tiers.
-- Authentication is JWT (access token only, stored in localStorage for simplicity — documented as an academic trade-off).
+## 5. Access Control Model
+- `guest`: unauthenticated; browse hotels and reviews.
+- `user`: authenticated; manage own reservations/reviews/profile.
+- `admin`: staff operations (hotel/room/reservation/analytics + user listing).
+- `owner`: exactly one account; full permissions including role and permission management.
 
-## 6. Entities
-- **Guest** — unauthenticated visitor; can browse and search hotels and read reviews.
-- **User** — authenticated end user; can reserve rooms, manage reservations, post reviews, edit profile.
-- **Admin** — seeded role only; no dedicated UI in this milestone. Used for data seeding/ops.
+## 6. Permission Strategy
+- Route access is permission-based.
+- Role defaults are resolved server-side.
+- For admin accounts, owner can apply per-user permission overrides:
+  - `allow[]` permissions explicitly granted.
+  - `deny[]` permissions explicitly revoked.
+- Owner permissions are not overrideable.
 
 ## 7. Risks
-- Backend search/filter slipping blocks frontend integration → mitigated by mock fixtures matching the locked contract.
-- JWT in localStorage is academic-grade only; documented in TRD as a known trade-off.
-- MongoDB schemaless flexibility can hide bugs → Joi validation is mandatory at every write endpoint.
+- JWT in localStorage is a known trade-off; XSS controls must remain strict.
+- Schema flexibility in MongoDB requires strict Joi validation on write endpoints.
+- Permission sprawl risk is mitigated by central permission constants and owner-only override endpoints.

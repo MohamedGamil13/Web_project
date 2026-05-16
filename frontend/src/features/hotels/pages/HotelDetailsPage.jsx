@@ -27,6 +27,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { ReserveDialog } from "@/features/reservations/ReserveDialog";
 import { ReviewsSection } from "@/features/reviews/ReviewsSection";
 import { useAuth } from "@/hooks/useAuth";
+import { isStaff } from "@/lib/access";
 import { createRoom, deleteRoom, getHotel, updateRoom } from "../api";
 
 const ROOM_LABEL = {
@@ -133,7 +134,7 @@ export default function HotelDetailsPage() {
 
 function HotelView({ hotel, onReviewsChanged }) {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = isStaff(user?.role);
   const [pickedRoom, setPickedRoom] = useState(null);
   const [roomFormOpen, setRoomFormOpen] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState("");
@@ -378,7 +379,7 @@ function HotelView({ hotel, onReviewsChanged }) {
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Up to {room.capacity} guest{room.capacity > 1 ? "s" : ""} ·{" "}
-                    {room.quantity} available
+                    {room.quantity} units in this room type
                   </Typography>
                 </CardContent>
                 <Divider />
@@ -431,13 +432,15 @@ function HotelView({ hotel, onReviewsChanged }) {
                           </Button>
                         </>
                       )}
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => setPickedRoom(room)}
-                      >
-                        Reserve
-                      </Button>
+                      {
+                        !isAdmin && <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => setPickedRoom(room)}
+                        >
+                          Reserve
+                        </Button>
+                      }
                     </Stack>
                   </Stack>
                 </CardActions>

@@ -25,6 +25,13 @@ describe("Reservation routes are auth-protected", () => {
     expect(res.status).toBe(401);
   });
 
+  it("returns 401 on GET /reservations/:id/timeline with no token", async () => {
+    const res = await request(app).get(
+      "/api/v1/reservations/507f1f77bcf86cd799439011/timeline",
+    );
+    expect(res.status).toBe(401);
+  });
+
   it("returns 401 on PATCH /reservations/:id/cancel with no token", async () => {
     const res = await request(app).patch(
       "/api/v1/reservations/507f1f77bcf86cd799439011/cancel",
@@ -128,6 +135,13 @@ describe("Reservation id param validation", () => {
   it("rejects a non-ObjectId in /reservations/:id/cancel", async () => {
     const res = await request(app)
       .patch("/api/v1/reservations/not-real/cancel")
+      .set("Authorization", `Bearer ${userToken()}`);
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects a non-ObjectId in /reservations/:id/timeline", async () => {
+    const res = await request(app)
+      .get("/api/v1/reservations/not-real/timeline")
       .set("Authorization", `Bearer ${userToken()}`);
     expect(res.status).toBe(422);
   });

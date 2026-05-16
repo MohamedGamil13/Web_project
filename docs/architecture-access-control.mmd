@@ -1,0 +1,26 @@
+flowchart LR
+  O["Owner (UI)"]
+  A["Admin (UI)"]
+  U["User (UI)"]
+  SPA["React SPA"]
+  API["Express API"]
+  AUTH["Auth Middleware"]
+  RES["Permission Resolver"]
+  DBU[("Users Collection\nrole + permissionOverrides")]
+  GUARD["Route Guard\nrequirePermission(...)"]
+
+  O --> SPA
+  A --> SPA
+  U --> SPA
+
+  SPA -->|"Bearer JWT"| API
+  API --> AUTH
+  AUTH --> DBU
+  AUTH --> RES
+  RES --> GUARD
+
+  O -->|"PATCH /users/:id/role"| API
+  O -->|"GET/PATCH /users/:id/permissions"| API
+
+  A -->|"staff ops (hotels, rooms, reservations, analytics)"| API
+  U -->|"self ops (profile, reservations, reviews)"| API

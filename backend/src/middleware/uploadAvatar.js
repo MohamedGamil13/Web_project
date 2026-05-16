@@ -28,7 +28,7 @@ const storage = multer.diskStorage({
   },
 });
 
-function fileFilter(_req, file, cb) {
+export function avatarFileFilter(_req, file, cb) {
   if (!MIME_TO_EXT[file.mimetype]) {
     cb(
       ApiError.validation("Invalid request", [
@@ -42,7 +42,7 @@ function fileFilter(_req, file, cb) {
 
 const uploader = multer({
   storage,
-  fileFilter,
+  fileFilter: avatarFileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 

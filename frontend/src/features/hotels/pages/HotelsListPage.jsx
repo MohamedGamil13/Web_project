@@ -16,6 +16,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/hooks/useAuth";
+import { isStaff } from "@/lib/access";
 import { HotelCard } from "../HotelCard";
 import { HotelFilters } from "../HotelFilters";
 import {
@@ -148,7 +149,7 @@ export default function HotelsListPage() {
                           ? "Searching…"
                           : `${total} hotel${total === 1 ? "" : "s"}`}
                   </Typography>
-                  {user?.role === "admin" && (
+                  {isStaff(user?.role) && (
                     <Button
                       component={RouterLink}
                       to="/hotels/new"

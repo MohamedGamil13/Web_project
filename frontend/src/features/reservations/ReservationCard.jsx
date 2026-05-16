@@ -33,7 +33,7 @@ export function ReservationCard({
   cancellable,
   actions = null,
 }) {
-  const { hotel, room, checkIn, checkOut, nights, guests, totalPrice, status } =
+  const { hotel, room, checkIn, checkOut, nights, guests, totalPrice, status, pricing } =
     reservation;
   const isPastStay = status === "active" && new Date(checkOut) <= new Date();
   return (
@@ -103,14 +103,21 @@ export function ReservationCard({
         </Stack>
       </CardContent>
       <CardActions sx={{ justifyContent: "space-between", px: 2, pb: 2 }}>
-        <Typography variant="body2">
-          <Box component="span" color="text.secondary">
-            Total:{" "}
-          </Box>
-          <Box component="span" fontWeight={600}>
-            ${totalPrice}
-          </Box>
-        </Typography>
+        <Stack spacing={0.25}>
+          {pricing && (
+            <Typography variant="caption" color="text.secondary">
+              Subtotal ${pricing.subtotal} + fee ${pricing.serviceFee} + tax ${pricing.taxAmount}
+            </Typography>
+          )}
+          <Typography variant="body2">
+            <Box component="span" color="text.secondary">
+              Total:{" "}
+            </Box>
+            <Box component="span" fontWeight={600}>
+              ${pricing?.total ?? totalPrice}
+            </Box>
+          </Typography>
+        </Stack>
         <Stack direction="row" spacing={1}>
           {actions}
           {cancellable && (

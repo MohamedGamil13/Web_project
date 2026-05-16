@@ -46,3 +46,31 @@ export const getAvatar = asyncHandler(async (req, res) => {
   const filePath = await usersService.getAvatarFilePath(req.params.id);
   res.sendFile(filePath);
 });
+
+export const listUsersAdmin = asyncHandler(async (req, res) => {
+  const result = await usersService.listUsersForAdmin(req.query);
+  ok(res, result.items, result.meta);
+});
+
+export const updateUserRoleAdmin = asyncHandler(async (req, res) => {
+  const user = await usersService.updateUserRoleByAdmin(
+    req.user.id,
+    req.params.id,
+    req.body.role,
+  );
+  ok(res, user);
+});
+
+export const getUserPermissionsOwner = asyncHandler(async (req, res) => {
+  const result = await usersService.getUserPermissionsForOwner(req.params.id);
+  ok(res, result);
+});
+
+export const updateUserPermissionsOwner = asyncHandler(async (req, res) => {
+  const result = await usersService.updateUserPermissionsForOwner(
+    req.user.id,
+    req.params.id,
+    req.body,
+  );
+  ok(res, result);
+});

@@ -20,7 +20,11 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true, select: false },
     phone: { type: String, trim: true, default: undefined },
     avatarPath: { type: String, trim: true, default: undefined },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
+    role: { type: String, enum: ["owner", "user", "admin"], default: "user" },
+    permissionOverrides: {
+      allow: { type: [String], default: [] },
+      deny: { type: [String], default: [] },
+    },
   },
   {
     timestamps: true,
@@ -39,6 +43,11 @@ const userSchema = new mongoose.Schema(
       },
     },
   },
+);
+
+userSchema.index(
+  { role: 1 },
+  { unique: true, partialFilterExpression: { role: "owner" } },
 );
 
 export const User = mongoose.model("User", userSchema);

@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant User
+  participant SPA as React SPA
+  participant API as Express API
+  participant DB as MongoDB
+
+  User->>SPA: Choose hotel room + dates
+  SPA->>API: POST /reservations
+  API->>DB: Validate overlap + quantity
+  DB-->>API: Availability result
+  API->>DB: Create reservation + workflow event
+  API-->>SPA: Reservation with pricing
+  SPA-->>User: Confirmation + timeline

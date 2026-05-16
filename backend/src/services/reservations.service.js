@@ -3,6 +3,8 @@ import { Room } from "../models/Room.js";
 import { Hotel } from "../models/Hotel.js";
 import { User } from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
+import { notifyReservationEvent } from "./notifications.service.js";
+import { calculateReservationPricing } from "../utils/pricing.js";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -14,6 +16,20 @@ function startOfToday() {
 
 function nightsBetween(checkIn, checkOut) {
   return Math.round((checkOut.getTime() - checkIn.getTime()) / ONE_DAY_MS);
+}
+
+function appendWorkflowEvent(
+  reservation,
+  { event, actorRole, actorUserId = null, message },
+) {
+  reservation.workflowEvents = reservation.workflowEvents ?? [];
+  reservation.workflowEvents.push({
+    event,
+    actorRole,
+    actorUserId,
+    message,
+    at: new Date(),
+  });
 }
 
 async function shapeReservation(reservationDoc) {
@@ -33,6 +49,10 @@ async function shapeReservation(reservationDoc) {
     guests: r.guests,
     nights: r.nights,
     totalPrice: r.totalPrice,
+    pricing: r.pricing ?? null,
+    workflowEvents: (r.workflowEvents ?? []).sort(
+      (a, b) => new Date(a.at).getTime() - new Date(b.at).getTime(),
+    ),
     cancelledAt: r.cancelledAt ?? null,
     createdAt: r.createdAt,
     user: user
@@ -81,8 +101,8 @@ async function countOverlappingReservations({
 }
 
 export async function createReservation(userId, role, payload) {
-  if (role === "admin") {
-    throw ApiError.forbidden("Admins cannot create reservations");
+  if (["admin", "owner"].includes(role)) {
+    throw ApiError.forbidden("Staff accounts cannot create reservations");
   }
 
   const checkIn = new Date(payload.checkIn);
@@ -131,7 +151,10 @@ export async function createReservation(userId, role, payload) {
   }
 
   const nights = nightsBetween(checkIn, checkOut);
-  const totalPrice = nights * room.pricePerNight;
+  const pricing = calculateReservationPricing({
+    nights,
+    pricePerNight: room.pricePerNight,
+  });
 
   const reservation = await Reservation.create({
     userId,
@@ -141,8 +164,26 @@ export async function createReservation(userId, role, payload) {
     checkOut,
     guests: payload.guests,
     nights,
-    totalPrice,
+    totalPrice: pricing.total,
+    pricing,
+    workflowEvents: [
+      {
+        event: "created",
+        actorRole: "user",
+        actorUserId: userId,
+        message: "Reservation created by user",
+        at: new Date(),
+      },
+    ],
     status: "active",
+  });
+
+  await notifyReservationEvent({
+    userId,
+    type: "reservation_created",
+    title: "Reservation confirmed",
+    message: `Your reservation was created for ${checkIn.toISOString().slice(0, 10)} to ${checkOut.toISOString().slice(0, 10)}.`,
+    reservationId: reservation._id,
   });
 
   return shapeReservation(reservation);
@@ -158,7 +199,7 @@ export async function listMyReservations(userId) {
 export async function getReservation(userId, role, id) {
   const reservation = await Reservation.findById(id).lean();
   if (!reservation) throw ApiError.notFound("Reservation not found");
-  if (role !== "admin" && reservation.userId.toString() !== userId) {
+  if (!["admin", "owner"].includes(role) && reservation.userId.toString() !== userId) {
     throw ApiError.forbidden("You can only view your own reservations");
   }
   return shapeReservation(reservation);
@@ -167,7 +208,7 @@ export async function getReservation(userId, role, id) {
 export async function cancelReservation(userId, role, id) {
   const reservation = await Reservation.findById(id);
   if (!reservation) throw ApiError.notFound("Reservation not found");
-  if (role !== "admin" && reservation.userId.toString() !== userId) {
+  if (!["admin", "owner"].includes(role) && reservation.userId.toString() !== userId) {
     throw ApiError.forbidden("You can only cancel your own reservations");
   }
   if (reservation.status === "cancelled") {
@@ -181,7 +222,23 @@ export async function cancelReservation(userId, role, id) {
 
   reservation.status = "cancelled";
   reservation.cancelledAt = new Date();
+  appendWorkflowEvent(reservation, {
+    event: "cancelled",
+    actorRole: ["admin", "owner"].includes(role) ? role : "user",
+    actorUserId: userId,
+    message:
+      ["admin", "owner"].includes(role)
+        ? "Reservation cancelled by staff"
+        : "Reservation cancelled by user",
+  });
   await reservation.save();
+  await notifyReservationEvent({
+    userId: reservation.userId,
+    type: "reservation_cancelled",
+    title: "Reservation cancelled",
+    message: "Your reservation has been cancelled successfully.",
+    reservationId: reservation._id,
+  });
   return shapeReservation(reservation);
 }
 
@@ -248,7 +305,12 @@ export async function listReservationsForAdmin(query) {
   };
 }
 
-export async function updateReservationAsAdmin(id, patch) {
+export async function updateReservationAsAdmin(
+  id,
+  patch,
+  actorUserId = null,
+  actorRole = "admin",
+) {
   const reservation = await Reservation.findById(id);
   if (!reservation) throw ApiError.notFound("Reservation not found");
   if (reservation.status === "cancelled") {
@@ -294,7 +356,60 @@ export async function updateReservationAsAdmin(id, patch) {
   reservation.checkOut = nextCheckOut;
   reservation.guests = nextGuests;
   reservation.nights = nightsBetween(nextCheckIn, nextCheckOut);
-  reservation.totalPrice = reservation.nights * room.pricePerNight;
+  const pricing = calculateReservationPricing({
+    nights: reservation.nights,
+    pricePerNight: room.pricePerNight,
+  });
+  reservation.pricing = pricing;
+  reservation.totalPrice = pricing.total;
+  appendWorkflowEvent(reservation, {
+    event: "updated",
+    actorRole: ["admin", "owner"].includes(actorRole) ? actorRole : "admin",
+    actorUserId,
+    message: "Reservation details updated by staff",
+  });
   await reservation.save();
+  await notifyReservationEvent({
+    userId: reservation.userId,
+    type: "reservation_updated",
+    title: "Reservation updated",
+    message: "One of your reservations was updated by staff.",
+    reservationId: reservation._id,
+  });
   return shapeReservation(reservation);
 }
+
+export async function getReservationTimeline(userId, role, id) {
+  const reservation = await Reservation.findById(id).lean();
+  if (!reservation) throw ApiError.notFound("Reservation not found");
+  if (!["admin", "owner"].includes(role) && reservation.userId.toString() !== userId) {
+    throw ApiError.forbidden("You can only view your own reservations");
+  }
+  const timeline = (reservation.workflowEvents ?? [])
+    .slice()
+    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
+  const actorIds = [
+    ...new Set(
+      timeline
+        .map((ev) => ev.actorUserId?.toString?.() ?? null)
+        .filter(Boolean),
+    ),
+  ];
+  const actors = actorIds.length
+    ? await User.find({ _id: { $in: actorIds } }).select("name email role").lean()
+    : [];
+  const actorById = new Map(actors.map((a) => [String(a._id), a]));
+
+  return timeline.map((ev) => {
+    const actorId = ev.actorUserId?.toString?.() ?? null;
+    const actor = actorId ? actorById.get(actorId) : null;
+    return {
+      ...ev,
+      actorUserId: actorId,
+      actorName: actor?.name ?? null,
+      actorEmail: actor?.email ?? null,
+    };
+  });
+}
+

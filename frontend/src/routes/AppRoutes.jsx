@@ -3,6 +3,7 @@ import { Layout } from "@/components/shared/Layout";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute";
 import { AdminRoute } from "@/routes/AdminRoute";
+import { MemberRoute } from "@/routes/MemberRoute";
 
 import NotFoundPage from "@/app/NotFoundPage";
 
@@ -18,6 +19,9 @@ import HotelFormPage from "@/features/hotels/pages/HotelFormPage";
 import ReservationsPage from "@/features/reservations/pages/ReservationsPage";
 import ReservationsHistoryPage from "@/features/reservations/pages/ReservationsHistoryPage";
 import AdminReservationsPage from "@/features/reservations/pages/AdminReservationsPage";
+import NotificationsPage from "@/features/notifications/pages/NotificationsPage";
+import AdminInsightsPage from "@/features/analytics/pages/AdminInsightsPage";
+import AdminUsersPage from "@/features/users/pages/AdminUsersPage";
 
 export function AppRoutes() {
   return (
@@ -36,11 +40,14 @@ export function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route path="profile" element={<ProfilePage />} />
           <Route path="profile/password" element={<ChangePasswordPage />} />
-          <Route path="reservations" element={<ReservationsPage />} />
-          <Route
-            path="reservations/history"
-            element={<ReservationsHistoryPage />}
-          />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route element={<MemberRoute />}>
+            <Route path="reservations" element={<ReservationsPage />} />
+            <Route
+              path="reservations/history"
+              element={<ReservationsHistoryPage />}
+            />
+          </Route>
         </Route>
 
         <Route element={<ProtectedRoute />}>
@@ -51,6 +58,8 @@ export function AppRoutes() {
               path="admin/reservations"
               element={<AdminReservationsPage />}
             />
+            <Route path="admin/insights" element={<AdminInsightsPage />} />
+            <Route path="admin/users" element={<AdminUsersPage />} />
           </Route>
         </Route>
 

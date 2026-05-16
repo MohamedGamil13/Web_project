@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { ALL_PERMISSIONS } from "../auth/permissions.js";
 
 export const objectIdParam = Joi.object({
   id: Joi.string()
@@ -32,3 +33,36 @@ export const changePasswordSchema = Joi.object({
 export const verifyPasswordSchema = Joi.object({
   currentPassword: Joi.string().min(1).required(),
 });
+
+export const listUsersQuerySchema = Joi.object({
+  q: Joi.string().trim().max(120).allow(""),
+  role: Joi.string().valid("owner", "user", "admin"),
+  page: Joi.number().integer().min(1).default(1),
+  pageSize: Joi.number().integer().min(1).max(50).default(10),
+});
+
+export const updateUserRoleSchema = Joi.object({
+  role: Joi.string().valid("user", "admin").required(),
+});
+
+export const updateUserPermissionsSchema = Joi.object({
+  allow: Joi.array()
+    .items(Joi.string().valid(...ALL_PERMISSIONS))
+    .default([]),
+  deny: Joi.array()
+    .items(Joi.string().valid(...ALL_PERMISSIONS))
+    .default([]),
+})
+  .custom((value, helpers) => {
+    const allow = new Set(value.allow ?? []);
+    const deny = new Set(value.deny ?? []);
+    for (const permission of allow) {
+      if (deny.has(permission)) {
+        return helpers.message(
+          `Permission "${permission}" cannot exist in both allow and deny`,
+        );
+      }
+    }
+    return value;
+  })
+  .required();

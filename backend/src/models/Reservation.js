@@ -25,6 +25,29 @@ const reservationSchema = new mongoose.Schema(
     guests: { type: Number, required: true, min: 1, max: 16 },
     nights: { type: Number, required: true, min: 1 },
     totalPrice: { type: Number, required: true, min: 0 },
+    pricing: {
+      subtotal: { type: Number, required: true, min: 0 },
+      serviceFee: { type: Number, required: true, min: 0 },
+      taxAmount: { type: Number, required: true, min: 0 },
+      total: { type: Number, required: true, min: 0 },
+      rules: {
+        serviceFeeRate: { type: Number, required: true, min: 0 },
+        taxRate: { type: Number, required: true, min: 0 },
+      },
+    },
+    workflowEvents: [
+      {
+        event: { type: String, required: true, trim: true },
+        actorRole: {
+          type: String,
+          enum: ["owner", "user", "admin", "system"],
+          required: true,
+        },
+        actorUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        message: { type: String, required: true, trim: true },
+        at: { type: Date, required: true, default: Date.now },
+      },
+    ],
     status: {
       type: String,
       enum: ["active", "cancelled"],

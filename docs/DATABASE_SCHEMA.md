@@ -1,131 +1,130 @@
 # Database Schema
 
-MongoDB via Mongoose. All collections include `createdAt` and `updatedAt` from `{ timestamps: true }`. All `_id` values are MongoDB ObjectIds.
+MongoDB via Mongoose. Collections use `timestamps: true` (`createdAt`, `updatedAt`).
 
-## 1. Entity Relationship Overview
+## 1. Relationship Overview
 
+```text
+User (1) ----< Reservation >---- (1) Room ---- (N..1) ---- Hotel
+  |                                           |
+  +----------------< Review >-----------------+
 ```
-User (1) ────< Reservation >──── (1) Room ────(N..1)──── Hotel
-  │                                                        │
-  └──────────────< Review >─────────────────────────────────┘
-                  (1 review per (user, hotel))
-```
 
-- A **Hotel** has many **Rooms**.
-- A **User** has many **Reservations**.
-- A **Reservation** belongs to exactly one **User** and one **Room** (and via the room, one **Hotel**, denormalized for query speed).
-- A **Review** belongs to one **User** and one **Hotel**; uniqueness enforced on `(user, hotel)`.
+- Hotel has many rooms.
+- User has many reservations.
+- Reservation belongs to one user, one room, and one denormalized hotel id.
+- Review belongs to one user and one hotel, with one-review-per-user-per-hotel uniqueness.
 
 ## 2. Collections
 
 ### 2.1 `users`
 | Field | Type | Notes |
-|-------|------|-------|
+|---|---|---|
 | `_id` | ObjectId | PK |
-| `name` | String, required, 2–80 chars | |
-| `email` | String, required, lowercase, **unique index** | |
-| `passwordHash` | String, required, `select: false` | bcrypt; never returned by the API |
-| `phone` | String, optional, ≤ 40 chars | |
-| `avatarPath` | String, optional | filename written by Multer into `backend/storage/avatars/`; never sent to the client |
-| `role` | String enum: `user` \| `admin`, default `user` | |
-| `createdAt`/`updatedAt` | Date | auto |
+| `name` | String | required, 2-80 |
+| `email` | String | required, lowercase, unique |
+| `passwordHash` | String | required, `select: false` |
+| `phone` | String | optional |
+| `avatarPath` | String | optional; internal storage filename |
+| `role` | String | enum: `owner` \| `admin` \| `user`, default `user` |
+| `permissionOverrides.allow` | [String] | explicit grants for admin accounts |
+| `permissionOverrides.deny` | [String] | explicit revocations for admin accounts |
+| `createdAt` / `updatedAt` | Date | auto |
 
-**Indexes:** `{ email: 1 }` unique.
+Indexes:
+- `{ email: 1 }` unique.
+- `{ role: 1 }` unique partial index for `{ role: "owner" }` (exactly one owner).
 
-**Hidden fields on serialization:** `passwordHash`, `__v`, `avatarPath`.
-
-**`toJSON` virtual:** the `User.toJSON` transform replaces the private `avatarPath` with a public `avatarUrl` of the form `/api/v1/users/<id>/avatar` (or `null` when unset). The avatar GET endpoint streams the file from `backend/storage/avatars/<avatarPath>`. Storage path layout is intentionally opaque so files can never be addressed directly.
+Serialization notes:
+- `passwordHash` and `avatarPath` are hidden from API output.
+- `avatarUrl` is exposed as `/api/v1/users/<id>/avatar`.
 
 ### 2.2 `hotels`
 | Field | Type | Notes |
-|-------|------|-------|
+|---|---|---|
 | `_id` | ObjectId | PK |
-| `name` | String, required | |
-| `description` | String | |
-| `city` | String, required, indexed | search target |
-| `country` | String, required | |
-| `address` | String | |
-| `starRating` | Number 1–5 | hotel-class rating, integer |
-| `amenities` | [String] | e.g. `wifi`, `pool`, `parking`, `breakfast`, `gym` |
-| `images` | [String] | URLs; seeded with placeholder links (e.g. `https://picsum.photos/...`) |
-| `priceFrom` | Number | denormalized minimum room price for sorting/listing |
-| `reviewAvg` | Number, default 0 | computed from reviews (renamed from `avgRating` in Phase 4 to match `reviewCount`) |
-| `reviewCount` | Number, default 0 | computed |
-| `createdAt`/`updatedAt` | Date | auto |
+| `name` | String | required |
+| `description` | String | optional |
+| `city` | String | required |
+| `country` | String | required |
+| `address` | String | optional |
+| `starRating` | Number | 1-5 |
+| `amenities` | [String] | optional |
+| `images` | [String] | URL list |
+| `priceFrom` | Number | denormalized minimum room price |
+| `reviewAvg` | Number | computed |
+| `reviewCount` | Number | computed |
+| `createdAt` / `updatedAt` | Date | auto |
 
-**Indexes:** `{ city: 1 }`, `{ priceFrom: 1 }`, `{ reviewAvg: -1 }`, text index on `{ name, city, description }` for keyword search.
+Indexes:
+- `{ city: 1 }`
+- `{ priceFrom: 1 }`
+- `{ reviewAvg: -1 }`
+- text index on hotel search fields (`name`, `city`, `description`).
 
 ### 2.3 `rooms`
 | Field | Type | Notes |
-|-------|------|-------|
+|---|---|---|
 | `_id` | ObjectId | PK |
-| `hotel` | ObjectId ref `Hotel`, required, indexed | |
-| `roomType` | String enum: `single` \| `double` \| `suite` \| `family` | renamed from `type` in Phase 4 to avoid the JS reserved-ish word |
-| `capacity` | Number, required, 1–8 | |
-| `pricePerNight` | Number, required, ≥ 0 | |
-| `quantity` | Number, default 1 | how many physical rooms of this type the hotel has |
-| `amenities` | [String] | optional, room-specific |
-| `images` | [String] | |
-| `createdAt`/`updatedAt` | Date | auto |
+| `hotel` | ObjectId ref `Hotel` | required, indexed |
+| `roomType` | String | enum: `single` \| `double` \| `suite` \| `family` |
+| `capacity` | Number | required |
+| `pricePerNight` | Number | required |
+| `quantity` | Number | required/default 1 |
+| `amenities` | [String] | optional |
+| `images` | [String] | optional |
+| `createdAt` / `updatedAt` | Date | auto |
 
-**Indexes:** `{ hotel: 1 }`.
-
-**Note on availability:** availability is computed at query time from overlapping reservations against `quantity` (no separate inventory collection).
+Indexes:
+- `{ hotel: 1 }`
 
 ### 2.4 `reservations`
 | Field | Type | Notes |
-|-------|------|-------|
+|---|---|---|
 | `_id` | ObjectId | PK |
-| `userId` | ObjectId ref `User`, required, indexed | |
-| `roomId` | ObjectId ref `Room`, required, indexed | |
-| `hotelId` | ObjectId ref `Hotel`, required, indexed | denormalized for list/lookup |
-| `checkIn` | Date, required | inclusive |
-| `checkOut` | Date, required | exclusive; must be `> checkIn` |
-| `guests` | Number, required, 1–16 | capped server-side at `room.capacity` |
-| `nights` | Number | computed = `(checkOut - checkIn) / 1d` |
-| `totalPrice` | Number | `nights * room.pricePerNight` (snapshot at create) |
-| `status` | String enum: `active` \| `cancelled`, default `active` | renamed from the previous `upcoming/completed/cancelled` plan; "past" stays are derived from dates on the client |
-| `cancelledAt` | Date | optional, set when `status` flips to `cancelled` |
-| `createdAt`/`updatedAt` | Date | auto |
+| `userId` | ObjectId ref `User` | required, indexed |
+| `roomId` | ObjectId ref `Room` | required, indexed |
+| `hotelId` | ObjectId ref `Hotel` | required, indexed |
+| `checkIn` | Date | required, inclusive |
+| `checkOut` | Date | required, exclusive |
+| `guests` | Number | required |
+| `nights` | Number | computed |
+| `totalPrice` | Number | computed snapshot |
+| `pricing.subtotal` | Number | nights × room price |
+| `pricing.serviceFee` | Number | 8% |
+| `pricing.taxAmount` | Number | 14% |
+| `pricing.total` | Number | subtotal + fees + tax |
+| `pricing.rules.serviceFeeRate` | Number | `0.08` |
+| `pricing.rules.taxRate` | Number | `0.14` |
+| `workflowEvents[]` | Array | includes `event`, `actorRole`, `actorUserId`, `message`, `at` |
+| `status` | String | enum: `active` \| `cancelled` |
+| `cancelledAt` | Date | optional |
+| `createdAt` / `updatedAt` | Date | auto |
 
-**Indexes:** `{ userId: 1, checkIn: -1 }`, `{ roomId: 1, status: 1, checkIn: 1, checkOut: 1 }` (used by the availability check).
+Indexes:
+- `{ userId: 1, checkIn: -1 }`
+- `{ roomId: 1, status: 1, checkIn: 1, checkOut: 1 }` for overlap checks.
 
-**Status transitions:**
-- `active` → `cancelled` — user-triggered via `PATCH /reservations/:id/cancel`. Allowed only while `checkIn > now`.
-- There is no `completed` state — past reservations remain `active`; the UI shows them under "Past stays" by comparing `checkOut` to now.
-
-**Availability rule:** a new reservation `R` is allowed only if, for the same `roomId`, the count of reservations with `status = active` whose date range `[checkIn, checkOut)` overlaps `[R.checkIn, R.checkOut)` is `< room.quantity`. Two ranges overlap iff `existing.checkIn < R.checkOut AND existing.checkOut > R.checkIn`.
+Availability rule:
+- For a room/date range, overlapping active reservations must remain `< room.quantity`.
 
 ### 2.5 `reviews`
 | Field | Type | Notes |
-|-------|------|-------|
+|---|---|---|
 | `_id` | ObjectId | PK |
-| `user` | ObjectId ref `User`, required | |
-| `hotel` | ObjectId ref `Hotel`, required, indexed | |
-| `rating` | Number 1–5, required, integer | |
-| `comment` | String, ≤ 1000 chars | |
-| `createdAt`/`updatedAt` | Date | auto |
+| `user` | ObjectId ref `User` | required |
+| `hotel` | ObjectId ref `Hotel` | required, indexed |
+| `rating` | Number | required, integer 1-5 |
+| `comment` | String | optional, max 1000 |
+| `createdAt` / `updatedAt` | Date | auto |
 
-**Indexes:** `{ hotel: 1, createdAt: -1 }`, `{ user: 1, hotel: 1 }` **unique** — one review per (user, hotel). A second `POST` attempt returns 409.
+Indexes:
+- `{ hotel: 1, createdAt: -1 }`
+- `{ user: 1, hotel: 1 }` unique (one review per user per hotel).
 
-**Eligibility:** any authenticated user can post a review for any hotel. The earlier "must have a completed reservation" rule was dropped in Phase 7 to keep the demo flow simple — re-add it here later if the rubric requires it.
-
-**Aggregate maintenance:** on every create / update / delete the hotel's `reviewAvg` (rounded to 1 decimal) and `reviewCount` are recomputed via:
-```js
-Review.aggregate([
-  { $match: { hotel: ObjectId(hotelId) } },
-  { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } }
-])
-```
-…and written back to the Hotel document in the same request.
+Eligibility:
+- Any authenticated user can post a review.
 
 ## 3. Seed Data
-A seed script (`backend/src/scripts/seed.js`, written by BE2) inserts:
-- 1 admin user, 3 regular users.
-- ~10 hotels across 3–4 cities, each with 3–5 rooms.
-- A handful of reservations and reviews for demoing.
-
-## 4. Constants (referenced by code)
-- `CANCEL_CUTOFF_HOURS = 24`
-- `PAGE_SIZE_DEFAULT = 10`, `PAGE_SIZE_MAX = 50`
-- `BCRYPT_ROUNDS = 10`
+- Seed script: `backend/src/scripts/seed.js`.
+- Inserts owner/admin/user accounts, sample hotels/rooms, and baseline data for validation.

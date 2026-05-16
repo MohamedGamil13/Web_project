@@ -9,6 +9,7 @@ import { getStoredToken, setStoredToken } from "@/lib/apiClient";
 import { getMe, logoutServer } from "./api";
 
 export const AuthContext = createContext(null);
+const REAUTH_CACHE_KEY = "hb.reauth";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -53,6 +54,11 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     await logoutServer();
+    try {
+      localStorage.removeItem(REAUTH_CACHE_KEY);
+    } catch {
+      // Ignore storage failures.
+    }
     setUser(null);
     setToken(null);
   }, []);

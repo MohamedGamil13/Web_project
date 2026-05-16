@@ -6,6 +6,11 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import jwt from "jsonwebtoken";
 import { AVATAR_DIR } from "../middleware/uploadAvatar.js";
+import {
+  ALL_PERMISSIONS,
+  getPermissionsForRole,
+  resolvePermissions,
+} from "../auth/permissions.js";
 
 export async function getMe(userId) {
   const user = await User.findById(userId);
@@ -121,4 +126,105 @@ export async function getAvatarFilePath(userId) {
     throw ApiError.notFound("Avatar not found");
   });
   return filePath;
+}
+
+export async function listUsersForAdmin(query) {
+  const { q = "", role, page = 1, pageSize = 10 } = query;
+  const filter = {};
+  if (role) filter.role = role;
+  if (q.trim()) {
+    const regex = new RegExp(q.trim(), "i");
+    filter.$or = [{ name: regex }, { email: regex }];
+  }
+
+  const skip = (page - 1) * pageSize;
+  const [items, total] = await Promise.all([
+    User.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize),
+    User.countDocuments(filter),
+  ]);
+
+  return {
+    items: items.map((u) => u.toJSON()),
+    meta: { page, pageSize, total },
+  };
+}
+
+export async function updateUserRoleByAdmin(actorUserId, targetUserId, role) {
+  if (actorUserId === targetUserId) {
+    throw ApiError.conflict("You cannot change your own role");
+  }
+  const user = await User.findById(targetUserId);
+  if (!user) throw ApiError.notFound("User not found");
+  if (user.role === "owner") {
+    throw ApiError.conflict("Owner role cannot be changed");
+  }
+  if (role === "owner") {
+    throw ApiError.conflict("Owner role cannot be assigned via this endpoint");
+  }
+  user.role = role;
+  if (role !== "admin") {
+    user.permissionOverrides = { allow: [], deny: [] };
+  }
+  await user.save();
+  return user.toJSON();
+}
+
+export async function getUserPermissionsForOwner(targetUserId) {
+  const user = await User.findById(targetUserId)
+    .select("name email role permissionOverrides")
+    .lean();
+  if (!user) throw ApiError.notFound("User not found");
+  if (user.role !== "admin") {
+    throw ApiError.conflict("Permission overrides are supported for admins only");
+  }
+
+  return {
+    user: {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+    basePermissions: getPermissionsForRole(user.role),
+    overrides: {
+      allow: user.permissionOverrides?.allow ?? [],
+      deny: user.permissionOverrides?.deny ?? [],
+    },
+    effectivePermissions: resolvePermissions(user.role, user.permissionOverrides),
+    availablePermissions: ALL_PERMISSIONS,
+  };
+}
+
+export async function updateUserPermissionsForOwner(
+  actorUserId,
+  targetUserId,
+  { allow, deny },
+) {
+  if (actorUserId === targetUserId) {
+    throw ApiError.conflict("You cannot edit your own permissions");
+  }
+  const user = await User.findById(targetUserId);
+  if (!user) throw ApiError.notFound("User not found");
+  if (user.role === "owner") {
+    throw ApiError.conflict("Owner permissions cannot be overridden");
+  }
+  if (user.role !== "admin") {
+    throw ApiError.conflict("Permission overrides are supported for admins only");
+  }
+
+  const nextAllow = [...new Set(allow)];
+  const nextDeny = [...new Set(deny)];
+  user.permissionOverrides = { allow: nextAllow, deny: nextDeny };
+  await user.save();
+
+  return {
+    user: user.toJSON(),
+    basePermissions: getPermissionsForRole(user.role),
+    overrides: user.permissionOverrides,
+    effectivePermissions: resolvePermissions(user.role, user.permissionOverrides),
+    availablePermissions: ALL_PERMISSIONS,
+  };
 }

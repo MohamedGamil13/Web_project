@@ -1,0 +1,150 @@
+<mxfile host="app.diagrams.net" modified="2026-05-16T02:10:00.000Z" version="24.7.17" type="device">
+  <diagram id="atlas-architecture" name="Architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="user" value="User Browser" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="spa" value="React SPA (Vite)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="280" y="120" width="180" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="api" value="Express API (/api/v1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="560" y="120" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="db" value="MongoDB" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="860" y="110" width="140" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="swagger" value="Swagger UI (/api/docs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="560" y="240" width="200" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="user" target="spa">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" value="JWT Bearer" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="spa" target="api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="api" target="db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="user" target="swagger">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="atlas-reservation-workflow" name="Reservation Workflow">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="w_user" value="User" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="110" width="120" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_spa" value="React SPA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="110" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_api" value="Express API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="560" y="110" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_db" value="MongoDB" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="800" y="100" width="120" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="w_e1" value="Choose hotel room + dates" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="w_user" target="w_spa">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_e2" value="POST /reservations" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="w_spa" target="w_api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_e3" value="Validate overlap + quantity" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="w_api" target="w_db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_e4" value="Availability result" style="endArrow=block;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="w_db" target="w_api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_e5" value="Create reservation + workflow event" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="w_api" target="w_db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_e6" value="Reservation with pricing" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="w_api" target="w_spa">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="w_e7" value="Confirmation + timeline" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="w_spa" target="w_user">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="atlas-access-control" name="Access Control">
+    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="ac_owner" value="Owner (UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_admin" value="Admin (UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="40" y="170" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_user" value="User (UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="260" width="130" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ac_spa" value="React SPA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="250" y="165" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_api" value="Express API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="470" y="165" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_auth" value="Auth Middleware" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="680" y="95" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_resolver" value="Permission Resolver" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="680" y="235" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_guard" value="requirePermission(...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="900" y="165" width="190" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_db" value="Users Collection&#10;role + permissionOverrides" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="95" width="220" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ac_e1" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_owner" target="ac_spa">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e2" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_admin" target="ac_spa">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e3" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_user" target="ac_spa">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e4" value="Bearer JWT" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_spa" target="ac_api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e5" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_api" target="ac_auth">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e6" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_auth" target="ac_resolver">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e7" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_resolver" target="ac_guard">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e8" value="load role + overrides" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="ac_auth" target="ac_db">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e9" value="PATCH /users/:id/role" style="endArrow=block;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="ac_owner" target="ac_api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ac_e10" value="GET/PATCH /users/:id/permissions" style="endArrow=block;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="ac_owner" target="ac_api">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -3,12 +3,14 @@ import {
   create,
   listMine,
   getOne,
+  getTimeline,
   cancel,
   listAdmin,
   updateAdmin,
 } from "../../controllers/reservations.controller.js";
 import { validate } from "../../middleware/validate.js";
-import { requireAuth, requireRole } from "../../middleware/auth.js";
+import { requireAuth, requirePermission } from "../../middleware/auth.js";
+import { PERMISSIONS } from "../../auth/permissions.js";
 import {
   createReservationSchema,
   listAdminReservationsQuerySchema,
@@ -70,7 +72,7 @@ router.post("/", validate(createReservationSchema), create);
 router.get("/me", listMine);
 router.get(
   "/manage",
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.RESERVATIONS_MANAGE_VIEW),
   validate(listAdminReservationsQuerySchema, "query"),
   listAdmin,
 );
@@ -90,9 +92,27 @@ router.get(
  *         schema: { type: string }
  */
 router.get("/:id", validate(reservationIdParam, "params"), getOne);
+/**
+ * @openapi
+ * /reservations/{id}/timeline:
+ *   get:
+ *     tags: [Reservations]
+ *     summary: Get workflow timeline events for a reservation
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Timeline events list
+ */
+router.get("/:id/timeline", validate(reservationIdParam, "params"), getTimeline);
 router.patch(
   "/:id",
-  requireRole("admin"),
+  requirePermission(PERMISSIONS.RESERVATIONS_MANAGE_EDIT),
   validate(reservationIdParam, "params"),
   validate(updateReservationSchema),
   updateAdmin,

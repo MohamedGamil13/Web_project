@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Formik, Form, useFormikContext } from "formik";
 import { useNavigate, useLocation } from "react-router-dom";
 import dayjs from "dayjs";
@@ -23,6 +23,7 @@ import { FDatePicker } from "@/lib/formik-mui";
 import { useAuth } from "@/hooks/useAuth";
 import { createReservationSchema } from "./schemas";
 import { createReservation } from "./api";
+import { calculateReservationPricing } from "./pricing";
 
 const ROOM_LABEL = {
   single: "Single room",
@@ -44,37 +45,39 @@ function nightsBetween(checkIn, checkOut) {
 function PriceSummary({ pricePerNight }) {
   const { values } = useFormikContext();
   const nights = nightsBetween(values.checkIn, values.checkOut);
-  const total = nights * pricePerNight;
+  const pricing = calculateReservationPricing({ nights, pricePerNight });
   return (
     <Stack spacing={0.75}>
-      <Stack
-        direction="row"
-        sx={{ justifyContent: "space-between", alignItems: "baseline" }}
-      >
+      <Stack direction="row" sx={{ justifyContent: "space-between" }}>
         <Typography variant="body2" color="text.secondary">
-          ${pricePerNight} × {nights || 0} night{nights === 1 ? "" : "s"}
+          ${pricePerNight} x {nights || 0} night{nights === 1 ? "" : "s"}
         </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ fontVariantNumeric: "tabular-nums" }}
-        >
-          ${total}
+        <Typography variant="body2" color="text.secondary">
+          ${pricing.subtotal}
         </Typography>
       </Stack>
-      <Stack
-        direction="row"
-        sx={{ justifyContent: "space-between", alignItems: "baseline" }}
-      >
+      <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+        <Typography variant="body2" color="text.secondary">
+          Service fee (8%)
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          ${pricing.serviceFee}
+        </Typography>
+      </Stack>
+      <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+        <Typography variant="body2" color="text.secondary">
+          Tax (14%)
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          ${pricing.taxAmount}
+        </Typography>
+      </Stack>
+      <Stack direction="row" sx={{ justifyContent: "space-between" }}>
         <Typography variant="body1" fontWeight={600}>
           Total
         </Typography>
-        <Typography
-          variant="h6"
-          fontWeight={700}
-          sx={{ fontVariantNumeric: "tabular-nums" }}
-        >
-          ${total}
+        <Typography variant="h6" fontWeight={700}>
+          ${pricing.total}
         </Typography>
       </Stack>
     </Stack>
@@ -114,7 +117,6 @@ function CheckInPicker() {
       minDate={tomorrow()}
       onChange={(d) => {
         if (!d) return;
-        // Keep checkOut strictly after checkIn — bump it forward when needed.
         const currentCheckOut = values.checkOut ? dayjs(values.checkOut) : null;
         if (!currentCheckOut || !currentCheckOut.isAfter(d, "day")) {
           setFieldValue("checkOut", d.add(1, "day").format("YYYY-MM-DD"), true);
@@ -130,22 +132,20 @@ function CheckOutPicker() {
   const minCheckOut = checkInDay
     ? checkInDay.add(1, "day")
     : tomorrow().add(1, "day");
-  return (
-    <FDatePicker name="checkOut" label="Check-out" minDate={minCheckOut} />
-  );
+  return <FDatePicker name="checkOut" label="Check-out" minDate={minCheckOut} />;
 }
 
 function SubmitButton({ pricePerNight, isSubmitting }) {
   const { values, isValid, dirty } = useFormikContext();
   const nights = nightsBetween(values.checkIn, values.checkOut);
-  const total = nights * pricePerNight;
+  const pricing = calculateReservationPricing({ nights, pricePerNight });
   return (
     <Button
       type="submit"
       variant="contained"
       disabled={isSubmitting || nights === 0 || (!isValid && dirty)}
     >
-      {isSubmitting ? "Reserving…" : `Confirm${total ? ` · $${total}` : ""}`}
+      {isSubmitting ? "Reserving..." : `Confirm${pricing.total ? ` - $${pricing.total}` : ""}`}
     </Button>
   );
 }
@@ -157,32 +157,27 @@ export function ReserveDialog({ open, onOpenChange, hotel, room }) {
   const [serverError, setServerError] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
 
+  useEffect(() => {
+    // Reset transient dialog state when switching rooms or closing/reopening.
+    setServerError(null);
+    setConfirmation(null);
+  }, [room?.id, open]);
+
   if (!room) return null;
 
-  // Variant: unauthenticated
   if (!isAuthenticated) {
     const returnTo = encodeURIComponent(location.pathname + location.search);
     return (
-      <Dialog
-        open={open}
-        onClose={() => onOpenChange(false)}
-        fullWidth
-        maxWidth="sm"
-      >
+      <Dialog open={open} onClose={() => onOpenChange(false)} fullWidth maxWidth="sm">
         <DialogTitle>Sign in to reserve</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            You need an account to make a booking.
-          </DialogContentText>
+          <DialogContentText>You need an account to make a booking.</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button variant="text" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            onClick={() => navigate(`/login?returnTo=${returnTo}`)}
-          >
+          <Button variant="contained" onClick={() => navigate(`/login?returnTo=${returnTo}`)}>
             Sign in
           </Button>
         </DialogActions>
@@ -190,7 +185,6 @@ export function ReserveDialog({ open, onOpenChange, hotel, room }) {
     );
   }
 
-  // Variant: confirmation
   if (confirmation) {
     return (
       <Dialog
@@ -206,22 +200,22 @@ export function ReserveDialog({ open, onOpenChange, hotel, room }) {
         <DialogTitle>Reservation confirmed</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            {hotel?.name} · {ROOM_LABEL[room.roomType] ?? room.roomType}
+            {hotel?.name} - {ROOM_LABEL[room.roomType] ?? room.roomType}
           </DialogContentText>
           <Stack spacing={1.25}>
-            <SummaryRow
-              label="Check-in"
-              value={dayjs(confirmation.checkIn).format("MMM D, YYYY")}
-            />
-            <SummaryRow
-              label="Check-out"
-              value={dayjs(confirmation.checkOut).format("MMM D, YYYY")}
-            />
+            <SummaryRow label="Check-in" value={dayjs(confirmation.checkIn).format("MMM D, YYYY")} />
+            <SummaryRow label="Check-out" value={dayjs(confirmation.checkOut).format("MMM D, YYYY")} />
             <SummaryRow label="Nights" value={confirmation.nights} />
             <SummaryRow label="Guests" value={confirmation.guests} />
             <SummaryRow
+              label="Subtotal"
+              value={`$${confirmation?.pricing?.subtotal ?? confirmation.totalPrice}`}
+            />
+            <SummaryRow label="Service fee" value={`$${confirmation?.pricing?.serviceFee ?? 0}`} />
+            <SummaryRow label="Tax" value={`$${confirmation?.pricing?.taxAmount ?? 0}`} />
+            <SummaryRow
               label="Total"
-              value={`$${confirmation.totalPrice}`}
+              value={`$${confirmation?.pricing?.total ?? confirmation.totalPrice}`}
               bold
             />
           </Stack>
@@ -238,17 +232,9 @@ export function ReserveDialog({ open, onOpenChange, hotel, room }) {
     );
   }
 
-  // Variant: form
   return (
-    <Dialog
-      open={open}
-      onClose={() => onOpenChange(false)}
-      fullWidth
-      maxWidth="sm"
-    >
-      <DialogTitle>
-        Reserve {ROOM_LABEL[room.roomType] ?? room.roomType}
-      </DialogTitle>
+    <Dialog open={open} onClose={() => onOpenChange(false)} fullWidth maxWidth="sm">
+      <DialogTitle>Reserve {ROOM_LABEL[room.roomType] ?? room.roomType}</DialogTitle>
       <Formik
         initialValues={{
           roomId: room.id,
@@ -266,10 +252,7 @@ export function ReserveDialog({ open, onOpenChange, hotel, room }) {
           } catch (err) {
             if (err?.code === "CONFLICT") {
               setServerError(err.message);
-            } else if (
-              err?.code === "VALIDATION_ERROR" &&
-              Array.isArray(err.details)
-            ) {
+            } else if (err?.code === "VALIDATION_ERROR" && Array.isArray(err.details)) {
               for (const d of err.details) {
                 if (d.field) setFieldError(d.field, d.message);
               }
@@ -285,8 +268,7 @@ export function ReserveDialog({ open, onOpenChange, hotel, room }) {
           <Form noValidate>
             <DialogContent>
               <DialogContentText sx={{ mb: 2 }}>
-                {hotel?.name} · ${room.pricePerNight} / night · sleeps up to{" "}
-                {room.capacity}
+                {hotel?.name} - ${room.pricePerNight} / night - sleeps up to {room.capacity}
               </DialogContentText>
               <Stack spacing={2.5}>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
@@ -308,10 +290,7 @@ export function ReserveDialog({ open, onOpenChange, hotel, room }) {
               >
                 Cancel
               </Button>
-              <SubmitButton
-                pricePerNight={room.pricePerNight}
-                isSubmitting={isSubmitting}
-              />
+              <SubmitButton pricePerNight={room.pricePerNight} isSubmitting={isSubmitting} />
             </DialogActions>
           </Form>
         )}
